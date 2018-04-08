@@ -1,0 +1,7 @@
+torch
+pycocotools
+matplotlib
+nltk
+numpy
+Pillow
+argparse
