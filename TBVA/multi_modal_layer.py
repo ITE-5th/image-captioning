@@ -18,13 +18,13 @@ class MultiModalLayer(Module):
         self.linear_rnn = Linear(rnn_features, multimodal_features)
         self.linear_attention = Linear(attention_features, multimodal_features)
         self.linear_cnn = Linear(cnn_features, multimodal_features)
-        self.intermediate = Linear(multimodal_features, out_features)
+        self.fusion = Linear(multimodal_features, out_features)
 
     def forward(self, embed2, rnn, attention, cnn):
         w = self.linear_embed2(embed2)
         r = self.linear_rnn(rnn)
         v = self.linear_cnn(cnn)
         z = self.linear_attention(attention)
-        intermediate = self.intermediate(w + r + v + z)
+        fusion = self.fusion(w + r + v + z)
 
-        return 1.7159 * F.tanh((2 / 3) * intermediate)
+        return 1.7159 * F.tanh((2 / 3) * fusion)

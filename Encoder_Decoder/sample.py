@@ -64,8 +64,10 @@ def main(args):
     # Build Models
     encoder = EncoderCNN(args.embed_size)
     encoder.eval()  # evaluation mode (BN uses moving mean/variance)
-    decoder = DecoderRNN(args.embed_size, args.hidden_size,
-                         len(vocab), args.num_layers)
+    decoder = DecoderRNN(args.embed_size,
+                         args.hidden_size,
+                         len(vocab),
+                         args.num_layers)
 
     # Load the trained model parameters
     encoder.load_state_dict(torch.load(args.encoder_path))

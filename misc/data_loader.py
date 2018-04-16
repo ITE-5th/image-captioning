@@ -1,13 +1,15 @@
+import os
+
+import nltk
 import torch
 import torch.utils.data as data
-import os
-import nltk
 from PIL import Image
 from pycocotools.coco import COCO
 
 
 class CocoDataset(data.Dataset):
     """COCO Custom Dataset compatible with torch.utils.data.DataLoader."""
+
     def __init__(self, root, json, vocab, transform=None):
         """Set the path for images, captions and vocabulary wrapper.
         
@@ -77,7 +79,7 @@ def collate_fn(data):
     targets = torch.zeros(len(captions), max(lengths)).long()
     for i, cap in enumerate(captions):
         end = lengths[i]
-        targets[i, :end] = cap[:end]        
+        targets[i, :end] = cap[:end]
     return images, targets, lengths
 
 
@@ -88,13 +90,13 @@ def get_loader(root, json, vocab, transform, batch_size, shuffle, num_workers):
                        json=json,
                        vocab=vocab,
                        transform=transform)
-    
+
     # Data loader for COCO dataset
     # This will return (images, captions, lengths) for every iteration.
     # images: tensor of shape (batch_size, 3, 224, 224).
     # captions: tensor of shape (batch_size, padded_length).
     # lengths: list indicating valid length for each caption. length is (batch_size).
-    data_loader = torch.utils.data.DataLoader(dataset=coco, 
+    data_loader = torch.utils.data.DataLoader(dataset=coco,
                                               batch_size=batch_size,
                                               shuffle=shuffle,
                                               num_workers=num_workers,

@@ -13,8 +13,8 @@ from Encoder_Decoder.model import EncoderCNN, DecoderRNN
 from misc.build_vocab import Vocabulary
 from misc.data_loader import get_loader
 
-
 Vocabulary()
+
 
 def to_var(x, volatile=False):
     if torch.cuda.is_available():
