@@ -1,3 +1,4 @@
+torchvision
 torch
 pycocotools
 matplotlib
