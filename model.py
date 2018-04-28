@@ -1,17 +1,16 @@
 import pretrainedmodels
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from pretrainedmodels import utils
 from torch.autograd import Variable
 from torch.nn.utils.rnn import pack_padded_sequence
 from torch.utils.data import DataLoader
 from torchvision import models
 
-from multi_modal_layer import MultiModalLayer
 from misc.coco_dataset import CocoDataset
 from misc.corpus import Corpus
 from misc.file_path_manager import FilePathManager
+from multi_modal_layer import MultiModalLayer
 
 
 class m_RNN(nn.Module):
@@ -67,7 +66,7 @@ class m_RNN(nn.Module):
         att_out = self.att_w(att_full).squeeze(2)
         alpha = nn.Softmax()(att_out)
         # N-L
-        context = torch.sum(features * alpha.unsqueeze(2))
+        context = torch.sum(features * alpha.unsqueeze(2), 1)
         return context, alpha
 
     def get_start_states(self, batch_size):
@@ -89,29 +88,31 @@ class m_RNN(nn.Module):
         return feat_49, feat_4096
 
     def forward(self, image, captions):
-        batch_size = 2
+        batch_size = 1
         image_attention_features, vgg_features = self.get_image_features(image)
         image_attention_features = image_attention_features.repeat(17, 1, 1)
+        vgg_features = vgg_features.repeat(17, 1)
         h0, c0 = self.get_start_states(batch_size)
 
         embeddings = self.embeds_1(captions)
         embeddings_2 = self.embeds_2(embeddings)
 
-        hiddens, next_state = self.rnn_cell(embeddings_2.view(17, 2, 2048), (h0[:batch_size, :], c0[:batch_size, :]))
+        hiddens, next_state = self.rnn_cell(embeddings_2.view(17, batch_size, 2048),
+                                            (h0[:batch_size, :], c0[:batch_size, :]))
         attention_layer = self._attention_layer
 
         atten_features, alpha = attention_layer(image_attention_features, hiddens.view(captions.shape[0], 512))
 
-        mm_features = self.multi_modal(embeddings_2, hiddens, atten_features, vgg_features)
+        mm_features = self.multi_modal(embeddings_2, hiddens.squeeze(), atten_features, vgg_features)
         intermediate_features = self.intermediate(mm_features)
 
-        return F.softmax(intermediate_features, self.vocab_count)
+        return nn.Softmax()(intermediate_features)
 
 
-def to_var(x, volatile=False, cuda=True):
+def to_var(x, cuda=True):
     if cuda and torch.cuda.is_available():
         x = x.cuda()
-    return Variable(x, volatile=volatile)
+    return Variable(x)
 
 
 if __name__ == '__main__':
@@ -123,14 +124,14 @@ if __name__ == '__main__':
 
     corpus = Corpus.load(FilePathManager.resolve("../data/corpus.pkl"))
     dataset = CocoDataset(corpus, transform=tf_img)
-    dataloader = DataLoader(dataset, batch_size=2, shuffle=True, num_workers=0, pin_memory=use_cuda)
+    dataloader = DataLoader(dataset, batch_size=1, shuffle=True, num_workers=0, pin_memory=use_cuda)
 
     x = m_RNN()
     if use_cuda:
         x.cuda()
     for i, (images, captions, lengths) in enumerate(dataloader):
         for k in range(captions.shape[1]):
-            test_img = to_var(images, volatile=True, cuda=use_cuda)
+            test_img = to_var(images, cuda=use_cuda)
             captions_var = to_var(captions, cuda=use_cuda)
             inputs = captions_var[:, k, :-1]
             targets = captions_var[:, k:, 1:]
