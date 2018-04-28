@@ -88,22 +88,24 @@ class m_RNN(nn.Module):
         return feat_49, feat_4096
 
     def forward(self, image, captions):
-        batch_size = 1
+        images_count = image.shape[0]
+        sentence_length = 17
+        batch_size = images_count * sentence_length
         image_attention_features, vgg_features = self.get_image_features(image)
-        image_attention_features = image_attention_features.repeat(17, 1, 1)
-        vgg_features = vgg_features.repeat(17, 1)
-        h0, c0 = self.get_start_states(batch_size)
+        image_attention_features = image_attention_features.repeat(sentence_length, 1, 1)
+        vgg_features = vgg_features.repeat(sentence_length, 1)
+        h0, c0 = self.get_start_states(images_count)
 
         embeddings = self.embeds_1(captions)
         embeddings_2 = self.embeds_2(embeddings)
 
-        hiddens, next_state = self.rnn_cell(embeddings_2.view(17, batch_size, 2048),
+        hiddens, next_state = self.rnn_cell(embeddings_2.view(sentence_length, images_count, 2048),
                                             (h0[:batch_size, :], c0[:batch_size, :]))
         attention_layer = self._attention_layer
 
         atten_features, alpha = attention_layer(image_attention_features, hiddens.view(captions.shape[0], 512))
 
-        mm_features = self.multi_modal(embeddings_2, hiddens.squeeze(), atten_features, vgg_features)
+        mm_features = self.multi_modal(embeddings_2, hiddens.view(batch_size, -1), atten_features, vgg_features)
         intermediate_features = self.intermediate(mm_features)
 
         return nn.Softmax()(intermediate_features)
@@ -124,7 +126,7 @@ if __name__ == '__main__':
 
     corpus = Corpus.load(FilePathManager.resolve("../data/corpus.pkl"))
     dataset = CocoDataset(corpus, transform=tf_img)
-    dataloader = DataLoader(dataset, batch_size=1, shuffle=True, num_workers=0, pin_memory=use_cuda)
+    dataloader = DataLoader(dataset, batch_size=10, shuffle=True, num_workers=0, pin_memory=use_cuda)
 
     x = m_RNN()
     if use_cuda:
@@ -136,5 +138,5 @@ if __name__ == '__main__':
             inputs = captions_var[:, k, :-1]
             targets = captions_var[:, k:, 1:]
             inputs = pack_padded_sequence(inputs, [17] * inputs.shape[0], True)[0]
-
+            print(k)
             predicts = x(test_img, inputs)
