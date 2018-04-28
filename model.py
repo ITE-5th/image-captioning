@@ -1,23 +1,22 @@
-import pickle
-
 import pretrainedmodels
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from PIL import Image
 from pretrainedmodels import utils
 from torch.autograd import Variable
-from torchvision import models, transforms
+from torch.nn.utils.rnn import pack_padded_sequence
+from torch.utils.data import DataLoader
+from torchvision import models
 
-from TBVA.multi_modal_layer import MultiModalLayer
-from misc.build_vocab import Vocabulary
-from misc.data_loader import get_loader
+from multi_modal_layer import MultiModalLayer
+from misc.coco_dataset import CocoDataset
+from misc.corpus import Corpus
+from misc.file_path_manager import FilePathManager
 
 
 class m_RNN(nn.Module):
     def __init__(self):
         super().__init__()
-        answer_length = 20
         embeds_1_size = 1024
         embeds_2_size = 2048
         rnn_size = 512
@@ -26,7 +25,8 @@ class m_RNN(nn.Module):
         multimodal_in_size = 512
         multimodal_out_size = 1024
         rnn_layers = 1
-        self.vocab_count = 9999
+        self.hidden_dim = 512
+        self.vocab_count = 10496
         self.D = 49
         self.L = 512
 
@@ -43,14 +43,15 @@ class m_RNN(nn.Module):
         self.att_bias = nn.Parameter(torch.zeros(self.D))
         self.att_w = nn.Linear(self.L, 1, bias=False)
 
-        self.embeds_1 = nn.Embedding(self.vocab_count, embeds_1_size)
-        self.embeds_2 = nn.Embedding(embeds_1_size, embeds_2_size)
+        # TODO embedding change first linear to embedding and modify data loader
+        self.embeds_1 = nn.Linear(self.vocab_count, embeds_1_size)
+        self.embeds_2 = nn.Linear(embeds_1_size, embeds_2_size)
 
-        self.rnn_cell = nn.LSTMCell(embeds_2_size, rnn_size, rnn_layers)
+        self.rnn_cell = nn.LSTM(embeds_2_size, rnn_size, rnn_layers)
 
-        self.multi_modal = MultiModalLayer(embeds_2_size, rnn_size, attention_size, cnn_features_size,
+        self.multi_modal = MultiModalLayer(embeds_2_size, rnn_size, cnn_features_size,
                                            multimodal_in_size, multimodal_out_size)
-        self.intermediate = nn.Linear(multimodal_out_size, answer_length)
+        self.intermediate = nn.Linear(multimodal_out_size, self.vocab_count)
 
     def _attention_layer(self, features, hiddens):
         """
@@ -69,6 +70,12 @@ class m_RNN(nn.Module):
         context = torch.sum(features * alpha.unsqueeze(2))
         return context, alpha
 
+    def get_start_states(self, batch_size):
+        hidden_dim = self.hidden_dim
+        h0 = to_var(torch.zeros(1, batch_size, hidden_dim))
+        c0 = to_var(torch.zeros(1, batch_size, hidden_dim))
+        return h0, c0
+
     def init_weights(self):
         # cnn fc
         self.feature_extractor.weight.data.normal_(0.0, 0.02)
@@ -82,14 +89,18 @@ class m_RNN(nn.Module):
         return feat_49, feat_4096
 
     def forward(self, image, captions):
-        vgg_features, image_attention_features = self.get_image_features(image)
+        batch_size = 2
+        image_attention_features, vgg_features = self.get_image_features(image)
+        image_attention_features = image_attention_features.repeat(17, 1, 1)
+        h0, c0 = self.get_start_states(batch_size)
 
         embeddings = self.embeds_1(captions)
         embeddings_2 = self.embeds_2(embeddings)
-        hiddens, next_state = self.rnn(embeddings_2)
+
+        hiddens, next_state = self.rnn_cell(embeddings_2.view(17, 2, 2048), (h0[:batch_size, :], c0[:batch_size, :]))
         attention_layer = self._attention_layer
 
-        atten_features, alpha = attention_layer(image_attention_features, hiddens)
+        atten_features, alpha = attention_layer(image_attention_features, hiddens.view(captions.shape[0], 512))
 
         mm_features = self.multi_modal(embeddings_2, hiddens, atten_features, vgg_features)
         intermediate_features = self.intermediate(mm_features)
@@ -97,49 +108,32 @@ class m_RNN(nn.Module):
         return F.softmax(intermediate_features, self.vocab_count)
 
 
-imsize = 224
-
-loader = transforms.Compose([transforms.Resize((imsize, imsize)), transforms.ToTensor()])
-
-
-def image_loader(image_name, cuda=True):
-    """load image, returns cuda tensor"""
-    _image = Image.open(image_name)
-    _image = loader(_image).float()
-    _image = Variable(_image, requires_grad=True)
-    _image = _image.unsqueeze(0)  # this is for VGG, may not be needed for ResNet
-    return _image.cuda() if cuda else _image
-
-
-model = pretrainedmodels.vgg16()
-model.eval()
-tf_img = utils.TransformImage(model)
-Vocabulary()
-with open('..\\data\\vocab.pkl', 'rb') as f:
-    vocab = pickle.load(f)
-
-data_loader = get_loader('D:\\Datasets\\mscoco\\2014\\train',
-                         'D:\\Datasets\\mscoco\\2014\\annotations_trainval2014\\captions_train2014.json',
-                         vocab,
-                         tf_img, 4,
-                         shuffle=True, num_workers=0)
-
-
-def to_var(x, volatile=False):
-    if torch.cuda.is_available():
+def to_var(x, volatile=False, cuda=True):
+    if cuda and torch.cuda.is_available():
         x = x.cuda()
     return Variable(x, volatile=volatile)
 
 
 if __name__ == '__main__':
-    # test_img = image_loader('../misc/images/1.jpg')
-    for i, (images, captions, lengths) in enumerate(data_loader):
-        test_img = to_var(images, volatile=True)
-        break
+    use_cuda = True
 
-    print('M_RNN')
+    model = pretrainedmodels.vgg16()
+    model.eval()
+    tf_img = utils.TransformImage(model)
+
+    corpus = Corpus.load(FilePathManager.resolve("../data/corpus.pkl"))
+    dataset = CocoDataset(corpus, transform=tf_img)
+    dataloader = DataLoader(dataset, batch_size=2, shuffle=True, num_workers=0, pin_memory=use_cuda)
+
     x = m_RNN()
-    x.cuda()
-    a, b = x.get_image_features(test_img)
-    # print(x.parameters())
-    print('test')
+    if use_cuda:
+        x.cuda()
+    for i, (images, captions, lengths) in enumerate(dataloader):
+        for k in range(captions.shape[1]):
+            test_img = to_var(images, volatile=True, cuda=use_cuda)
+            captions_var = to_var(captions, cuda=use_cuda)
+            inputs = captions_var[:, k, :-1]
+            targets = captions_var[:, k:, 1:]
+            inputs = pack_padded_sequence(inputs, [17] * inputs.shape[0], True)[0]
+
+            predicts = x(test_img, inputs)

@@ -1,3 +1,4 @@
+pretrainedmodels
 torchvision
 torch
 pycocotools
