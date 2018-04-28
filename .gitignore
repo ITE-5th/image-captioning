@@ -107,5 +107,4 @@ data/instances_train2014.json
 data/instances_val2014.json
 data/person_keypoints_train2014.json
 data/person_keypoints_val2014.json
-data/vocab2.pkl
-/data/corpus.pkl
+!/data/corpus.pkl
