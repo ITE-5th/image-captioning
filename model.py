@@ -92,8 +92,19 @@ class m_RNN(nn.Module):
         sentence_length = 17
         batch_size = images_count * sentence_length
         image_attention_features, vgg_features = self.get_image_features(image)
-        image_attention_features = image_attention_features.repeat(sentence_length, 1, 1)
-        vgg_features = vgg_features.repeat(sentence_length, 1)
+
+        vgg_features = torch.stack([vgg_features] * sentence_length) \
+            .permute(1, 0, 2) \
+            .contiguous() \
+            .view(-1, vgg_features.shape[-1])
+
+        image_attention_features = torch.stack([image_attention_features.view(images_count, -1)] * sentence_length) \
+            .permute(1, 0, 2) \
+            .contiguous() \
+            .view(-1, image_attention_features.shape[1], image_attention_features.shape[2])
+
+        # image_attention_features = image_attention_features.repeat(sentence_length, 1, 1)
+        # vgg_features = vgg_features.repeat(sentence_length, 1)
         h0, c0 = self.get_start_states(images_count)
 
         embeddings = self.embeds_1(captions)
@@ -109,6 +120,9 @@ class m_RNN(nn.Module):
         intermediate_features = self.intermediate(mm_features)
 
         return nn.Softmax()(intermediate_features)
+
+    def sample(self):
+        pass
 
 
 def to_var(x, cuda=True):
