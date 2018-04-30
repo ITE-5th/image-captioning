@@ -5,8 +5,8 @@ import numpy as np
 from PIL import Image
 from pretrainedmodels import utils
 
+from file_path_manager import FilePathManager
 from misc.corpus import Corpus
-from misc.file_path_manager import FilePathManager
 from model import m_RNN
 from vgg16_extractor import Vgg16Extractor
 
@@ -52,7 +52,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--image', type=str, default='misc/images/1.jpg',
                         help='input image for generating caption')
-    parser.add_argument('--corpus_path', type=str, default='../data/corpus.pkl',
+    parser.add_argument('--corpus_path', type=str, default='data/corpus.pkl',
                         help='path for vocabulary wrapper')
 
     args = parser.parse_args()

@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader
 from torch.utils.data import Dataset
 
 from misc.corpus import Corpus
-from misc.file_path_manager import FilePathManager
+from file_path_manager import FilePathManager
 
 
 class CocoDataset(Dataset):
@@ -23,8 +23,8 @@ class CocoDataset(Dataset):
         image, caption = self.captions[index]
         inputs = torch.stack([self.corpus.embed_sentence(caption[i], one_hot=True) for i in range(len(caption))])
         # inputs = torch.stack([self.corpus.sentence_indices(caption[i]) for i in range(len(caption))])
-        # targets = torch.stack([self.corpus.sentence_indices(caption[i]) for i in range(len(caption))])
-        targets = inputs
+        targets = torch.stack([self.corpus.sentence_indices(caption[i]) for i in range(len(caption))])
+        # targets = inputs
         return image, inputs, targets
 
     def __len__(self):

@@ -1,7 +1,7 @@
 import pretrainedmodels
 from pretrainedmodels import utils
 
-from misc.file_path_manager import FilePathManager
+from file_path_manager import FilePathManager
 
 
 class Vgg16Extractor:
@@ -47,6 +47,6 @@ class Vgg16Extractor:
 if __name__ == '__main__':
     extractor = Vgg16Extractor()
     load_img = utils.LoadImage()
-    image_path = FilePathManager.resolve("images/1.jpg")
+    image_path = FilePathManager.resolve("misc/images/1.jpg")
 
     extractor.forward(load_img(image_path))

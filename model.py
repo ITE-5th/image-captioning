@@ -1,14 +1,6 @@
-import pretrainedmodels
 import torch
 import torch.nn as nn
-from pretrainedmodels import utils
-from torch.autograd import Variable
-from torch.nn.utils.rnn import pack_padded_sequence
-from torch.utils.data import DataLoader
 
-from misc.coco_dataset import CocoDataset
-from misc.corpus import Corpus
-from misc.file_path_manager import FilePathManager
 from multi_modal_layer import MultiModalLayer
 
 
@@ -109,7 +101,8 @@ class m_RNN(nn.Module):
         mm_features = self.multi_modal(embeddings_2, hiddens.view(batch_size, -1), atten_features, image_features)
         intermediate_features = self.intermediate(mm_features)
 
-        return nn.Softmax()(intermediate_features)
+        # return nn.Softmax()(intermediate_features)
+        return intermediate_features
 
     def sample(self, image_features, image_regions, start_word):
 
@@ -134,40 +127,3 @@ class m_RNN(nn.Module):
             sampled_ids.append(word.squeeze().max(0)[1])
 
         return torch.stack(sampled_ids, 0)
-
-
-def to_var(x, cuda=True):
-    if cuda and torch.cuda.is_available():
-        x = x.cuda()
-    return Variable(x)
-
-
-if __name__ == '__main__':
-    use_cuda = True
-
-    model = pretrainedmodels.vgg16()
-    model.eval()
-    tf_img = utils.TransformImage(model)
-
-    corpus = Corpus.load(FilePathManager.resolve("../data/corpus.pkl"))
-    dataset = CocoDataset(corpus, transform=tf_img)
-    dataloader = DataLoader(dataset, batch_size=10, shuffle=True, num_workers=0, pin_memory=use_cuda)
-    x = m_RNN()
-    if use_cuda:
-        x.cuda()
-    for i, (images, captions, lengths) in enumerate(dataloader):
-        for k in range(captions.shape[1]):
-            test_img = to_var(images, cuda=use_cuda)
-            captions_var = to_var(captions, cuda=use_cuda)
-            inputs = captions_var[:, k, :-1]
-            targets = captions_var[:, k:, 1:]
-            inputs = pack_padded_sequence(inputs, [17] * inputs.shape[0], True)[0]
-            print(k)
-
-            start_word = to_var(corpus.word_one_hot('<start>'), cuda=use_cuda)
-            sampled_ids = x.sample(test_img[0].unsqueeze(0), start_word)
-            sampled_ids = sampled_ids.cpu().data.numpy()
-            sentence = ''
-            for i in sampled_ids:
-                sentence += corpus.word_from_index(i) + ' '
-            print(sentence)

@@ -6,7 +6,7 @@ import torchvision.datasets as dset
 import torchvision.transforms as transforms
 from gensim.models.wrappers.fasttext import FastText
 
-from misc.file_path_manager import FilePathManager
+from file_path_manager import FilePathManager
 
 
 class Corpus:
