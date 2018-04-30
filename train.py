@@ -45,7 +45,7 @@ def main(args):
         model.cuda()
 
     # Loss and Optimizer
-    criterion = nn.CrossEntropyLoss()
+    criterion = nn.CrossEntropyLoss(ignore_index=corpus.word_index(corpus.PAD))
     params = list(model.parameters())
     optimizer = torch.optim.Adam(params, lr=args.learning_rate)
 
@@ -60,7 +60,7 @@ def main(args):
         for i, (images, inputs, targets) in enumerate(dataloader):
             images = images.cuda()
             images_features, images_regions = extractor.forward(images)
-            for k in range(5):
+            for k in range(inputs.shape[1]):
                 # Set mini-batch dataset
                 images = handle(images, cuda=use_cuda)
                 input = handle(inputs[:, k, :-1, :], cuda=use_cuda)
@@ -93,7 +93,6 @@ def main(args):
             torch.save(optimizer.state_dict(),
                        os.path.join(args.model_path,
                                     'optimizer-%d.pkl' % (epoch + 1)))
-
 
 
 if __name__ == '__main__':
