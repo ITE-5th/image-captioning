@@ -35,7 +35,7 @@ def main(args):
         image_dir = args.image_dir
         output_dir = args.output_dir
         image_size = [args.image_size, args.image_size]
-        resize_images(image_dir, output_dir, image_size)
+        resize_images(image_dir + split, output_dir, image_size)
 
 
 if __name__ == '__main__':
