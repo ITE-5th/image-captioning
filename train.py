@@ -49,6 +49,11 @@ def main(args):
     params = list(model.parameters())
     optimizer = torch.optim.Adam(params, lr=args.learning_rate)
 
+    # Continue Training
+    if args.pre_trained_path is not None and args.optimizer_path is not None:
+        model.load_state_dict(torch.load(args.pre_trained_path))
+        optimizer.load_state_dict(torch.load(args.optimizer_path))
+
     # Train the Models
     total_step = len(dataloader)
     for epoch in range(args.num_epochs):
@@ -85,12 +90,20 @@ def main(args):
             torch.save(model.state_dict(),
                        os.path.join(args.model_path,
                                     'model-%d.pkl' % (epoch + 1)))
+            torch.save(optimizer.state_dict(),
+                       os.path.join(args.model_path,
+                                    'optimizer-%d.pkl' % (epoch + 1)))
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+
     parser.add_argument('--model_path', type=str, default='./models/',
                         help='path for saving trained models')
+    parser.add_argument('--pre_trained_path', type=str, default='./models/model-10.pkl',
+                        help='path for saved trained models')
+    parser.add_argument('--optimizer_path', type=str, default='./models/optimizer-10.pkl',
+                        help='path for saved  optimizer')
     parser.add_argument('--corpus_path', type=str, default='data/corpus.pkl',
                         help='path for vocabulary wrapper')
     parser.add_argument('--caption_path', type=str,
@@ -103,7 +116,7 @@ if __name__ == '__main__':
     parser.add_argument('--save_step', type=int, default=2,
                         help='step size for saving trained models')
 
-    parser.add_argument('--num_epochs', type=int, default=100)
+    parser.add_argument('--num_epochs', type=int, default=10)
     parser.add_argument('--batch_size', type=int, default=5)
     parser.add_argument('--num_workers', type=int, default=0)
     parser.add_argument('--learning_rate', type=float, default=1e-3)
