@@ -83,7 +83,7 @@ def main(args):
             if i % args.log_step == 0:
                 print('Epoch [%d/%d], Step [%d/%d], Loss: %.4f, Perplexity: %5.4f'
                       % (epoch, args.num_epochs, i, total_step,
-                         loss.data[0], np.exp(loss.data[0])))
+                         loss.item(), np.exp(loss.item())))
 
             # Save the models
         if epoch == args.num_epochs - 1:
