@@ -53,7 +53,7 @@ class Corpus:
         if isinstance(word, str):
             word = self.word_index(word)
         result[word] = 1
-        return result.long()
+        return result
 
     def word_index(self, word):
         if word not in self.word2idx and word not in self.idx2word:
