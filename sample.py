@@ -2,6 +2,7 @@ import argparse
 
 import matplotlib.pyplot as plt
 import numpy as np
+import torch
 from PIL import Image
 from pretrainedmodels import utils
 
@@ -28,11 +29,15 @@ def main(args):
 
     corpus = Corpus.load(FilePathManager.resolve(args.corpus_path))
     model = m_RNN(use_cuda=use_cuda)
+
     start_word = corpus.word_one_hot('<start>')
 
     if use_cuda:
         model.cuda()
         start_word = start_word.cuda()
+
+    state_dict = torch.load(args.model_path)
+    model.load_state_dict(state_dict)
 
     features, regions = extractor.forward(load_img(args.image))
     sampled_ids = model.sample(features, regions, start_word.unsqueeze(0))
@@ -50,9 +55,11 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--image', type=str, default='misc/images/1.jpg',
+    parser.add_argument('--image', type=str, default='misc/images/COCO_val2014_000000016977.jpg',
                         help='input image for generating caption')
     parser.add_argument('--corpus_path', type=str, default='data/corpus.pkl',
+                        help='path for vocabulary wrapper')
+    parser.add_argument('--model_path', type=str, default='models/model-100.pkl',
                         help='path for vocabulary wrapper')
 
     args = parser.parse_args()

@@ -124,6 +124,8 @@ class m_RNN(nn.Module):
             mm_features = self.multi_modal(embeddings_2, hiddens.view(1, -1), atten_features, image_features)
             intermediate_features = self.intermediate(mm_features)
             word = nn.Softmax()(intermediate_features)
+            # word = intermediate_features
+
             sampled_ids.append(word.squeeze().max(0)[1])
 
         return torch.stack(sampled_ids, 0)

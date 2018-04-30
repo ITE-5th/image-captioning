@@ -33,7 +33,7 @@ def main(args):
     corpus = Corpus.load(FilePathManager.resolve(args.corpus_path))
     print(corpus.word_from_index(0))
 
-    dataset = CocoDataset(corpus, transform=extractor.tf_image)
+    dataset = CocoDataset(corpus, root=args.image_dir, annFile=args.caption_path, transform=extractor.tf_image)
     # Build data loader
     dataloader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers,
                             pin_memory=use_cuda)
@@ -80,11 +80,11 @@ def main(args):
                       % (epoch, args.num_epochs, i, total_step,
                          loss.data[0], np.exp(loss.data[0])))
 
-                # Save the models
-            if (i + 1) % args.save_step == 0:
-                torch.save(model.state_dict(),
-                           os.path.join(args.model_path,
-                                        'model-%d-%d.pkl' % (epoch + 1, i + 1)))
+            # Save the models
+        if epoch == args.num_epochs - 1:
+            torch.save(model.state_dict(),
+                       os.path.join(args.model_path,
+                                    'model-%d.pkl' % (epoch + 1)))
 
 
 if __name__ == '__main__':
@@ -93,20 +93,20 @@ if __name__ == '__main__':
                         help='path for saving trained models')
     parser.add_argument('--corpus_path', type=str, default='data/corpus.pkl',
                         help='path for vocabulary wrapper')
-    parser.add_argument('--image_dir', type=str, default='D:/Datasets/mscoco/2014/resized2014',
-                        help='directory for resized images')
     parser.add_argument('--caption_path', type=str,
-                        default='./data/captions_train2014.json',
+                        default='D:/Datasets/mscoco/test/captions_train2017.json',
                         help='path for train annotation json file')
-    parser.add_argument('--log_step', type=int, default=10,
+    parser.add_argument('--image_dir', type=str, default='D:/Datasets/mscoco/test/images',
+                        help='directory for resized images')
+    parser.add_argument('--log_step', type=int, default=2,
                         help='step size for prining log info')
-    parser.add_argument('--save_step', type=int, default=1000,
+    parser.add_argument('--save_step', type=int, default=2,
                         help='step size for saving trained models')
 
-    parser.add_argument('--num_epochs', type=int, default=5)
-    parser.add_argument('--batch_size', type=int, default=4)
+    parser.add_argument('--num_epochs', type=int, default=100)
+    parser.add_argument('--batch_size', type=int, default=5)
     parser.add_argument('--num_workers', type=int, default=0)
-    parser.add_argument('--learning_rate', type=float, default=0.001)
+    parser.add_argument('--learning_rate', type=float, default=1e-3)
     args = parser.parse_args()
     print(args)
     main(args)

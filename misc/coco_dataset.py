@@ -7,16 +7,16 @@ from pretrainedmodels import utils
 from torch.utils.data import DataLoader
 from torch.utils.data import Dataset
 
-from misc.corpus import Corpus
 from file_path_manager import FilePathManager
+from misc.corpus import Corpus
 
 
 class CocoDataset(Dataset):
 
-    def __init__(self, corpus: Corpus, transform=None):
+    def __init__(self, corpus: Corpus, root, annFile, transform=None):
         self.corpus = corpus
-        self.captions = dset.CocoCaptions(root='D:\\Datasets\\mscoco\\2014\\train',
-                                          annFile='D:\Datasets\\mscoco\\2014\\annotations_trainval2014\\captions_train2014.json',
+        self.captions = dset.CocoCaptions(root=root,
+                                          annFile=annFile,
                                           transform=transform)
 
     def __getitem__(self, index):
