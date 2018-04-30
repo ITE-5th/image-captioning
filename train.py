@@ -95,14 +95,15 @@ def main(args):
                                     'optimizer-%d.pkl' % (epoch + 1)))
 
 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--model_path', type=str, default='./models/',
                         help='path for saving trained models')
-    parser.add_argument('--pre_trained_path', type=str, default='./models/model-10.pkl',
+    parser.add_argument('--pre_trained_path', type=str,
                         help='path for saved trained models')
-    parser.add_argument('--optimizer_path', type=str, default='./models/optimizer-10.pkl',
+    parser.add_argument('--optimizer_path', type=str,
                         help='path for saved  optimizer')
     parser.add_argument('--corpus_path', type=str, default='data/corpus.pkl',
                         help='path for vocabulary wrapper')

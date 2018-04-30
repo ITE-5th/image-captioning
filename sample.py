@@ -59,7 +59,7 @@ if __name__ == '__main__':
                         help='input image for generating caption')
     parser.add_argument('--corpus_path', type=str, default='data/corpus.pkl',
                         help='path for vocabulary wrapper')
-    parser.add_argument('--model_path', type=str, default='models/model-100.pkl',
+    parser.add_argument('--model_path', type=str, default='models/model-1000.pkl',
                         help='path for vocabulary wrapper')
 
     args = parser.parse_args()
