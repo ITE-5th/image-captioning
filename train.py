@@ -60,7 +60,7 @@ def main(args):
         for i, (images, inputs, targets) in enumerate(dataloader):
             images = images.cuda()
             images_features, images_regions = extractor.forward(images)
-            for k in range(inputs.shape[1]):
+            for k in range(5):
                 # Set mini-batch dataset
                 images = handle(images, cuda=use_cuda)
                 input = handle(inputs[:, k, :-1, :], cuda=use_cuda)
