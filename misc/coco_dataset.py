@@ -21,10 +21,10 @@ class CocoDataset(Dataset):
 
     def __getitem__(self, index):
         image, caption = self.captions[index]
-        inputs = torch.stack([self.corpus.embed_sentence(caption[i], one_hot=True) for i in range(5)])
-        # inputs = torch.stack([self.corpus.sentence_indices(caption[i]) for i in range(len(caption))])
-        targets = torch.stack([self.corpus.sentence_indices(caption[i]) for i in range(5)])
-        # targets = inputs
+        # inputs = torch.stack([self.corpus.embed_sentence(caption[i], one_hot=True) for i in range(5)])
+        inputs = torch.stack([self.corpus.sentence_indices(caption[i]) for i in range(5)])
+        # targets = torch.stack([self.corpus.sentence_indices(caption[i]) for i in range(len(caption))])
+        targets = inputs
         return image, inputs, targets
 
     def __len__(self):

@@ -30,7 +30,8 @@ def main(args):
     corpus = Corpus.load(FilePathManager.resolve(args.corpus_path))
     model = m_RNN(use_cuda=use_cuda)
 
-    start_word = corpus.word_one_hot('<start>')
+    start_word = corpus.word_index('<start>')
+    # start_word = corpus.word_one_hot('<start>')
 
     if use_cuda:
         model.cuda()
@@ -40,7 +41,8 @@ def main(args):
     model.load_state_dict(state_dict)
 
     features, regions = extractor.forward(load_img(args.image))
-    sampled_ids = model.sample(features, regions, start_word.unsqueeze(0))
+    # sampled_ids = model.sample(features, regions, start_word.unsqueeze(0))
+    sampled_ids = model.sample(features, regions, torch.LongTensor([start_word]))
     sampled_ids = sampled_ids.cpu().data.numpy()
     sentence = ''
     for i in sampled_ids:
@@ -55,11 +57,11 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--image', type=str, default='misc/images/COCO_val2014_000000016977.jpg',
+    parser.add_argument('--image', type=str, default='misc/images/COCO_val2014_000000322141.jpg',
                         help='input image for generating caption')
     parser.add_argument('--corpus_path', type=str, default='data/corpus.pkl',
                         help='path for vocabulary wrapper')
-    parser.add_argument('--model_path', type=str, default='models/model-10.pkl',
+    parser.add_argument('--model_path', type=str, default='models/model-100.pkl',
                         help='path for vocabulary wrapper')
 
     args = parser.parse_args()

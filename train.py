@@ -45,7 +45,8 @@ def main(args):
         model.cuda()
 
     # Loss and Optimizer
-    criterion = nn.CrossEntropyLoss(ignore_index=corpus.word_index(corpus.PAD))
+    # criterion = nn.CrossEntropyLoss(ignore_index=corpus.word_index(corpus.PAD))
+    criterion = nn.CrossEntropyLoss()
     params = list(model.parameters())
     optimizer = torch.optim.Adam(params, lr=args.learning_rate)
 
@@ -63,7 +64,7 @@ def main(args):
             for k in range(inputs.shape[1]):
                 # Set mini-batch dataset
                 images = handle(images, cuda=use_cuda)
-                input = handle(inputs[:, k, :-1, :], cuda=use_cuda)
+                input = handle(inputs[:, k, :-1], cuda=use_cuda)
                 target = handle(targets[:, k, 1:], cuda=use_cuda)
 
                 input = pack_padded_sequence(input, [17] * input.shape[0], True)[0]
@@ -116,7 +117,7 @@ if __name__ == '__main__':
     parser.add_argument('--save_step', type=int, default=2,
                         help='step size for saving trained models')
 
-    parser.add_argument('--num_epochs', type=int, default=10)
+    parser.add_argument('--num_epochs', type=int, default=100)
     parser.add_argument('--batch_size', type=int, default=5)
     parser.add_argument('--num_workers', type=int, default=0)
     parser.add_argument('--learning_rate', type=float, default=1e-3)

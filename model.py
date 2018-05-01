@@ -28,7 +28,9 @@ class m_RNN(nn.Module):
         self.att_w = nn.Linear(self.L, 1, bias=False)
 
         # TODO embedding change first linear to embedding and modify data loader
-        self.embeds_1 = nn.Linear(self.vocab_count, embeds_1_size)
+        # self.embeds_1 = nn.Linear(self.vocab_count, embeds_1_size)
+        self.embeds_1 = nn.Embedding(self.vocab_count, embeds_1_size)
+
         self.embeds_2 = nn.Linear(embeds_1_size, embeds_2_size)
 
         self.rnn_cell = nn.LSTM(embeds_2_size, rnn_size, rnn_layers)
@@ -36,6 +38,7 @@ class m_RNN(nn.Module):
         self.multi_modal = MultiModalLayer(embeds_2_size, rnn_size, cnn_features_size,
                                            multimodal_in_size, multimodal_out_size)
         self.intermediate = nn.Linear(multimodal_out_size, self.vocab_count)
+        self.intermediate.weight.data = self.embeds_1.weight.data
 
     def _attention_layer(self, features, hiddens):
         """
@@ -75,18 +78,18 @@ class m_RNN(nn.Module):
         images_count = image_features.shape[0]
         sentence_length = 17
         batch_size = images_count * sentence_length
-        image_features = torch.stack([image_features] * sentence_length) \
-            .permute(1, 0, 2) \
-            .contiguous() \
-            .view(-1, image_features.shape[-1])
+        # image_features = torch.stack([image_features] * sentence_length) \
+        #     .permute(1, 0, 2) \
+        #     .contiguous() \
+        #     .view(-1, image_features.shape[-1])
+        #
+        # image_regions = torch.stack([image_regions.view(images_count, -1)] * sentence_length) \
+        #     .permute(1, 0, 2) \
+        #     .contiguous() \
+        #     .view(-1, image_regions.shape[1], image_regions.shape[2])
 
-        image_regions = torch.stack([image_regions.view(images_count, -1)] * sentence_length) \
-            .permute(1, 0, 2) \
-            .contiguous() \
-            .view(-1, image_regions.shape[1], image_regions.shape[2])
-
-        # image_regions = image_regions.repeat(sentence_length, 1, 1)
-        # image_features = image_features.repeat(sentence_length, 1)
+        image_regions = image_regions.repeat(sentence_length, 1, 1)
+        image_features = image_features.repeat(sentence_length, 1)
         h0, c0 = self.get_start_states(images_count)
 
         embeddings = self.embeds_1(captions)
@@ -124,8 +127,8 @@ class m_RNN(nn.Module):
             mm_features = self.multi_modal(embeddings_2, hiddens.view(1, -1), atten_features, image_features)
             intermediate_features = self.intermediate(mm_features)
             word = nn.Softmax()(intermediate_features)
-            # word = intermediate_features
+            word = word.squeeze().max(0)[1]
 
-            sampled_ids.append(word.squeeze().max(0)[1])
+            sampled_ids.append(word)
 
         return torch.stack(sampled_ids, 0)
