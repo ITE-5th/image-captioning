@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 from multi_modal_layer import MultiModalLayer
 
@@ -37,8 +38,8 @@ class m_RNN(nn.Module):
 
         self.multi_modal = MultiModalLayer(embeds_2_size, rnn_size, cnn_features_size,
                                            multimodal_in_size, multimodal_out_size)
-        self.intermediate = nn.Linear(multimodal_out_size, self.vocab_count)
-        self.intermediate.weight.data = self.embeds_1.weight.data
+        # self.intermediate = nn.Linear(multimodal_out_size, self.vocab_count)
+        # self.intermediate.weight.data = self.embeds_1.weight.data
 
     def _attention_layer(self, features, hiddens):
         """
@@ -102,7 +103,8 @@ class m_RNN(nn.Module):
         atten_features, alpha = attention_layer(image_regions, hiddens.view(captions.shape[0], 512))
 
         mm_features = self.multi_modal(embeddings_2, hiddens.view(batch_size, -1), atten_features, image_features)
-        intermediate_features = self.intermediate(mm_features)
+        # intermediate_features = self.intermediate(mm_features)
+        intermediate_features = F.linear(mm_features, weight=self.embeds_1.weight)
 
         # return nn.Softmax()(intermediate_features)
         return intermediate_features
@@ -125,8 +127,10 @@ class m_RNN(nn.Module):
             atten_features, alpha = attention_layer(image_regions, hiddens.view(1, 512))
 
             mm_features = self.multi_modal(embeddings_2, hiddens.view(1, -1), atten_features, image_features)
-            intermediate_features = self.intermediate(mm_features)
-            word = nn.Softmax()(intermediate_features)
+            # intermediate_features = self.intermediate(mm_features)
+            intermediate_features = F.linear(mm_features, weight=self.embeds_1.weight)
+            # word = nn.Softmax()(intermediate_features)
+            word = intermediate_features
             word = word.squeeze().max(0)[1]
 
             sampled_ids.append(word)
