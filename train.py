@@ -48,7 +48,7 @@ def main(args):
     # criterion = nn.CrossEntropyLoss(ignore_index=corpus.word_index(corpus.PAD))
     criterion = nn.CrossEntropyLoss()
     params = list(model.parameters())
-    optimizer = torch.optim.Adam(params, lr=args.learning_rate)
+    optimizer = torch.optim.Adam(params, lr=args.lr, weight_decay=args.w_decay)
 
     # Continue Training
     if args.pre_trained_path is not None and args.optimizer_path is not None:
@@ -77,7 +77,6 @@ def main(args):
                 output = model(images_features, images_regions, input)
 
                 loss = criterion(output, target)
-                # TODO TWS
                 loss.backward()
 
                 optimizer.step()
@@ -121,7 +120,8 @@ if __name__ == '__main__':
     parser.add_argument('--num_epochs', type=int, default=100)
     parser.add_argument('--batch_size', type=int, default=5)
     parser.add_argument('--num_workers', type=int, default=0)
-    parser.add_argument('--learning_rate', type=float, default=1e-3)
+    parser.add_argument('--lr', type=float, default=0.0001)
+    parser.add_argument('--w_decay', type=float, default=0)
     args = parser.parse_args()
     print(args)
     main(args)

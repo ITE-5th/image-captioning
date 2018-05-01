@@ -57,7 +57,7 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--image', type=str, default='misc/images/example.png',
+    parser.add_argument('--image', type=str, default='misc/images/COCO_val2014_000000322141.jpg',
                         help='input image for generating caption')
     parser.add_argument('--corpus_path', type=str, default='data/corpus.pkl',
                         help='path for vocabulary wrapper')
