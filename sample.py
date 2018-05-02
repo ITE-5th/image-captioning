@@ -57,11 +57,11 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--image', type=str, default='misc/images/COCO_val2014_000000322141.jpg',
+    parser.add_argument('--image', type=str, default='misc/images/0x5XJII.jpg',
                         help='input image for generating caption')
     parser.add_argument('--corpus_path', type=str, default='data/corpus.pkl',
                         help='path for vocabulary wrapper')
-    parser.add_argument('--model_path', type=str, default='models/model-100.pkl',
+    parser.add_argument('--model_path', type=str, default='models/model-7.pkl',
                         help='path for vocabulary wrapper')
 
     args = parser.parse_args()

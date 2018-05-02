@@ -120,8 +120,8 @@ class m_RNN(nn.Module):
             embeddings = self.embeds_1(word)
             embeddings_2 = self.embeds_2(embeddings)
 
-            hiddens, next_state = self.rnn_cell(embeddings_2.view(1, 1, 2048),
-                                                (h0[:1, :], c0[:1, :]))
+            hiddens, (h0, c0) = self.rnn_cell(embeddings_2.view(1, 1, 2048),
+                                              (h0, c0))
             attention_layer = self._attention_layer
 
             atten_features, alpha = attention_layer(image_regions, hiddens.view(1, 512))
