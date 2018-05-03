@@ -86,14 +86,13 @@ def main(args):
                       % (epoch, args.num_epochs, i, total_step,
                          loss.item(), np.exp(loss.item())))
 
-            # Save the models
-        if epoch == args.num_epochs - 1:
-            torch.save(model.state_dict(),
-                       os.path.join(args.model_path,
-                                    'model-%d.pkl' % (epoch + 1)))
-            torch.save(optimizer.state_dict(),
-                       os.path.join(args.model_path,
-                                    'optimizer-%d.pkl' % (epoch + 1)))
+        # Save the models
+        torch.save(model.state_dict(),
+                   os.path.join(args.model_path,
+                                'model-%d.pkl' % (epoch + 1)))
+        torch.save(optimizer.state_dict(),
+                   os.path.join(args.model_path,
+                                'optimizer-%d.pkl' % (epoch + 1)))
 
 
 if __name__ == '__main__':
