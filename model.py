@@ -25,7 +25,7 @@ class m_RNN(nn.Module):
         # attention
         self.att_vw = nn.Linear(self.L, self.L, bias=False)
         self.att_hw = nn.Linear(rnn_size, self.L, bias=False)
-        self.att_bias = nn.Parameter(torch.zeros(self.D))
+        self.att_bias = nn.Parameter(torch.ones(self.D))
         self.att_w = nn.Linear(self.L, 1, bias=False)
 
         # TODO embedding change first linear to embedding and modify data loader
@@ -53,7 +53,7 @@ class m_RNN(nn.Module):
         # N-1-D
         att_full = nn.ReLU()(att_fea * att_h * self.att_bias.view(1, -1, 1))
         att_out = self.att_w(att_full).squeeze(2)
-        alpha = nn.Softmax()(att_out)
+        alpha = F.softmax(att_out, dim=1)
         # N-L
         context = torch.sum(features * alpha.unsqueeze(2), 1)
         return context, alpha
@@ -138,3 +138,13 @@ class m_RNN(nn.Module):
             sampled_ids.append(word)
 
         return torch.stack(sampled_ids, 0), alphas
+
+
+if __name__ == '__main__':
+    model = m_RNN()
+
+    model.train()
+    model.cuda()
+
+    for name, param in model.named_parameters():
+        print(name, param.size())

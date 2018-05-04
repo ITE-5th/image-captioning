@@ -9,7 +9,6 @@ def attention_visualization(image_name, caption, alphas):
     plt.subplot(4, 5, 1)
     plt.imshow(image)
     plt.axis('off')
-
     words = caption
     for t in range(len(words)):
         if t > 18:
@@ -22,4 +21,6 @@ def attention_visualization(image_name, caption, alphas):
         alp_img = skimage.transform.pyramid_expand(alp_curr.numpy(), upscale=16, sigma=20)
         plt.imshow(alp_img, alpha=0.85)
         plt.axis('off')
+    plt.savefig('sample.png')
     plt.show()
+

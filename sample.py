@@ -5,7 +5,7 @@ import numpy as np
 import torch
 from PIL import Image
 from pretrainedmodels import utils
-import torch.nn as nn
+
 from file_path_manager import FilePathManager
 from misc.corpus import Corpus
 from misc.helper import attention_visualization
@@ -24,15 +24,14 @@ def load_image(image_path, transform=None):
 
 
 def main(args):
-    use_cuda = False
+    use_cuda = True
     extractor = Vgg16Extractor(use_gpu=use_cuda, transform=True)
     load_img = utils.LoadImage()
 
     corpus = Corpus.load(FilePathManager.resolve(args.corpus_path))
     model = m_RNN(use_cuda=use_cuda)
 
-    start_word = corpus.word_index('<start>')
-    # start_word = corpus.word_one_hot('<start>')
+    start_word = torch.Tensor([corpus.word_index('<start>')])
 
     if use_cuda:
         model.cuda()
@@ -43,7 +42,7 @@ def main(args):
 
     features, regions = extractor.forward(load_img(args.image))
     # sampled_ids = model.sample(features, regions, start_word.unsqueeze(0))
-    sampled_ids, alphas = model.sample(features, regions, torch.LongTensor([start_word]))
+    sampled_ids, alphas = model.sample(features, regions, start_word)
     alphas = torch.cat(alphas[1:], 0)
     sampled_ids = sampled_ids.cpu().data.numpy()
     sentence = ''
@@ -63,11 +62,11 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--image', type=str, default='misc/images/COCO_val2014_000000179765.jpg',
+    parser.add_argument('--image', type=str, default='misc/images/Image.jpg',
                         help='input image for generating caption')
     parser.add_argument('--corpus_path', type=str, default='data/corpus.pkl',
                         help='path for vocabulary wrapper')
-    parser.add_argument('--model_path', type=str, default='models/model-50.pkl',
+    parser.add_argument('--model_path', type=str, default='models/model-10.pkl',
                         help='path for vocabulary wrapper')
 
     args = parser.parse_args()

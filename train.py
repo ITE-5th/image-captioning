@@ -39,7 +39,7 @@ def main(args):
                             pin_memory=use_cuda)
 
     # Build the models
-    model = m_RNN()
+    model = m_RNN(use_cuda=use_cuda)
 
     if torch.cuda.is_available():
         model.cuda()
@@ -59,7 +59,7 @@ def main(args):
 
     # Train the Models
     total_step = len(dataloader)
-    for epoch in range(args.pre_trained_epoch, args.pre_trained_epoch + 1):
+    for epoch in range(args.pre_trained_epoch, args.pre_trained_epoch + 10):
         for i, (images, inputs, targets) in enumerate(dataloader):
             images = images.cuda()
             images_features, images_regions = extractor.forward(images)
@@ -123,5 +123,4 @@ if __name__ == '__main__':
     parser.add_argument('--lr', type=float, default=0.0001)
     parser.add_argument('--w_decay', type=float, default=0)
     args = parser.parse_args()
-    print(args)
     main(args)
