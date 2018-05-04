@@ -21,50 +21,21 @@ def handle(x, cuda):
 
 
 def main(args):
-    train(
-        args.model_path,
-        args.pre_trained_path,
-        args.optimizer_path,
-        args.corpus_path,
-        args.caption_path,
-        args.image_dir,
-        args.log_step,
-        args.save_step,
-        args.num_epochs,
-        args.batch_size,
-        args.num_workers,
-        args.lr,
-        args.w_decay)
-
-
-def train(
-        num_epochs,
-        pre_trained_path,
-        optimizer_path,
-        use_cuda=True,
-        model_path='models/',
-        corpus_path='data/corpus.pkl',
-        caption_path='data/annotations/captions_train2017.json',
-        image_dir='data/train',
-        log_step=1,
-        batch_size=200,
-        num_workers=0,
-        lr=0.0001,
-        w_decay=0):
+    use_cuda = True
     # Create model directory
-    if not os.path.exists(model_path):
-        os.makedirs(model_path)
+    if not os.path.exists(args.model_path):
+        os.makedirs(args.model_path)
 
     # VGG feature extractor
     extractor = Vgg16Extractor(use_gpu=use_cuda, transform=False)
 
     # Load vocabulary wrapper.
-    corpus = Corpus.load(FilePathManager.resolve(corpus_path))
+    corpus = Corpus.load(FilePathManager.resolve(args.corpus_path))
     print(corpus.word_from_index(0))
 
-    dataset = CocoDataset(corpus, root=image_dir, annFile=caption_path, transform=extractor.tf_image)
+    dataset = CocoDataset(corpus, root=args.image_dir, annFile=args.caption_path, transform=extractor.tf_image)
     # Build data loader
-    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers,
+    dataloader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers,
                             pin_memory=use_cuda)
 
     # Build the models
@@ -77,16 +48,16 @@ def train(
     # criterion = nn.CrossEntropyLoss(ignore_index=corpus.word_index(corpus.PAD))
     criterion = nn.CrossEntropyLoss()
     params = list(model.parameters())
-    optimizer = torch.optim.Adam(params, lr=lr, weight_decay=w_decay)
+    optimizer = torch.optim.Adam(params, lr=args.lr, weight_decay=args.w_decay)
 
     # Continue Training
-    if pre_trained_path is not None and optimizer_path is not None:
-        model.load_state_dict(torch.load(pre_trained_path))
-        optimizer.load_state_dict(torch.load(optimizer_path))
+    if args.pre_trained_epoch != 0:
+        model.load_state_dict(torch.load(f"{args.model_path}model-{args.pre_trained_epoch}.pkl"))
+        optimizer.load_state_dict(torch.load(f"{args.model_path}optimizer-{args.pre_trained_epoch}.pkl"))
 
     # Train the Models
     total_step = len(dataloader)
-    for epoch in range(num_epochs):
+    for epoch in range(args.pre_trained_epoch, args.num_epochs):
         for i, (images, inputs, targets) in enumerate(dataloader):
             images = images.cuda()
             images_features, images_regions = extractor.forward(images)
@@ -110,17 +81,17 @@ def train(
 
                 optimizer.step()
             # Print log info
-            if i % log_step == 0:
+            if i % args.log_step == 0:
                 print('Epoch [%d/%d], Step [%d/%d], Loss: %.4f, Perplexity: %5.4f'
-                      % (epoch, num_epochs, i, total_step,
+                      % (epoch, args.num_epochs, i, total_step,
                          loss.item(), np.exp(loss.item())))
 
         # Save the models
         torch.save(model.state_dict(),
-                   os.path.join(model_path,
+                   os.path.join(args.model_path,
                                 'model-%d.pkl' % (epoch + 1)))
         torch.save(optimizer.state_dict(),
-                   os.path.join(model_path,
+                   os.path.join(args.model_path,
                                 'optimizer-%d.pkl' % (epoch + 1)))
 
 
@@ -129,10 +100,8 @@ if __name__ == '__main__':
 
     parser.add_argument('--model_path', type=str, default='./models/',
                         help='path for saving trained models')
-    parser.add_argument('--pre_trained_path', type=str,
+    parser.add_argument('--pre_trained_epoch', type=int, default=0,
                         help='path for saved trained models')
-    parser.add_argument('--optimizer_path', type=str,
-                        help='path for saved  optimizer')
     parser.add_argument('--corpus_path', type=str, default='data/corpus.pkl',
                         help='path for vocabulary wrapper')
     parser.add_argument('--caption_path', type=str,
@@ -144,6 +113,7 @@ if __name__ == '__main__':
                         help='step size for printing log info')
     parser.add_argument('--save_step', type=int, default=2,
                         help='step size for saving trained models')
+
     parser.add_argument('--num_epochs', type=int, default=50)
     parser.add_argument('--batch_size', type=int, default=5)
     parser.add_argument('--num_workers', type=int, default=0)
