@@ -57,7 +57,7 @@ def main(args):
 
     # Train the Models
     total_step = len(dataloader)
-    for epoch in range(1):
+    for epoch in range(args.pre_trained_epoch, args.pre_trained_epoch + 1):
         for i, (images, inputs, targets) in enumerate(dataloader):
             images = images.cuda()
             images_features, images_regions = extractor.forward(images)
@@ -83,7 +83,7 @@ def main(args):
             # Print log info
             if i % args.log_step == 0:
                 print('Epoch [%d/%d], Step [%d/%d], Loss: %.4f, Perplexity: %5.4f'
-                      % (epoch, args.num_epochs, i, total_step,
+                      % (epoch, args.pre_trained_epoch + 1, i, total_step,
                          loss.item(), np.exp(loss.item())))
 
         # Save the models
