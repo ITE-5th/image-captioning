@@ -57,7 +57,7 @@ def main(args):
 
     # Train the Models
     total_step = len(dataloader)
-    for epoch in range(args.pre_trained_epoch, args.pre_trained_epoch + 50):
+    for epoch in range(args.pre_trained_epoch, args.pre_trained_epoch + 1):
         for i, (images, inputs, targets) in enumerate(dataloader):
             images = images.cuda()
             images_features, images_regions = extractor.forward(images)
