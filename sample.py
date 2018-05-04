@@ -31,7 +31,7 @@ def main(args):
     corpus = Corpus.load(FilePathManager.resolve(args.corpus_path))
     model = m_RNN(use_cuda=use_cuda)
 
-    start_word = torch.Tensor([corpus.word_index('<start>')])
+    start_word = torch.LongTensor([corpus.word_index('<start>')])
 
     if use_cuda:
         model.cuda()
@@ -62,7 +62,7 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--image', type=str, default='misc/images/Image.jpg',
+    parser.add_argument('--image', type=str, default='misc/images/COCO_val2014_000000016977.jpg',
                         help='input image for generating caption')
     parser.add_argument('--corpus_path', type=str, default='data/corpus.pkl',
                         help='path for vocabulary wrapper')
