@@ -5,9 +5,10 @@ import numpy as np
 import torch
 from PIL import Image
 from pretrainedmodels import utils
-
+import torch.nn as nn
 from file_path_manager import FilePathManager
 from misc.corpus import Corpus
+from misc.helper import attention_visualization
 from model import m_RNN
 from vgg16_extractor import Vgg16Extractor
 
@@ -42,11 +43,16 @@ def main(args):
 
     features, regions = extractor.forward(load_img(args.image))
     # sampled_ids = model.sample(features, regions, start_word.unsqueeze(0))
-    sampled_ids = model.sample(features, regions, torch.LongTensor([start_word]))
+    sampled_ids, alphas = model.sample(features, regions, torch.LongTensor([start_word]))
+    alphas = torch.cat(alphas[1:], 0)
     sampled_ids = sampled_ids.cpu().data.numpy()
     sentence = ''
+    words = []
     for i in sampled_ids:
+        words.append(corpus.word_from_index(i))
         sentence += corpus.word_from_index(i) + ' '
+
+    attention_visualization(args.image, words, alphas.data.cpu())
     print(sentence)
 
     image = Image.open(args.image)
@@ -57,11 +63,11 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--image', type=str, default='misc/images/0x5XJII.jpg',
+    parser.add_argument('--image', type=str, default='misc/images/COCO_val2014_000000179765.jpg',
                         help='input image for generating caption')
     parser.add_argument('--corpus_path', type=str, default='data/corpus.pkl',
                         help='path for vocabulary wrapper')
-    parser.add_argument('--model_path', type=str, default='models/model-7.pkl',
+    parser.add_argument('--model_path', type=str, default='models/model-50.pkl',
                         help='path for vocabulary wrapper')
 
     args = parser.parse_args()

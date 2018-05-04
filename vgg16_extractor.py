@@ -1,4 +1,5 @@
 import pretrainedmodels
+import torch.nn as nn
 from pretrainedmodels import utils
 
 from file_path_manager import FilePathManager
@@ -31,14 +32,18 @@ class Vgg16Extractor:
         if self.use_gpu:
             image = image.cuda()
 
-        regions = self.cnn._features(image)
+        model = nn.Sequential(*(self.cnn._features[:-2]))
 
-        x = regions.view(regions.size(0), -1)
+        regions = model(image)
+
+        model = nn.Sequential(*(self.cnn._features[-2:]))
+        feat = model(regions)
+        x = feat.view(feat.size(0), -1)
         x = self.cnn.linear0(x)
         x = self.cnn.relu0(x)
         x = self.cnn.dropout0(x)
         features = self.cnn.linear1(x)
-        return features, regions.view(regions.size(0), 49, regions.size(1))
+        return features, regions.view(regions.size(0), 196, regions.size(1))
 
     def __call__(self, image):
         return self.forward(image)

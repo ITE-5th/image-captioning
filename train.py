@@ -57,7 +57,7 @@ def main(args):
 
     # Train the Models
     total_step = len(dataloader)
-    for epoch in range(args.pre_trained_epoch, args.pre_trained_epoch + 1):
+    for epoch in range(args.pre_trained_epoch, args.pre_trained_epoch + 50):
         for i, (images, inputs, targets) in enumerate(dataloader):
             images = images.cuda()
             images_features, images_regions = extractor.forward(images)
@@ -100,7 +100,7 @@ if __name__ == '__main__':
 
     parser.add_argument('--model_path', type=str, default='./models/',
                         help='path for saving trained models')
-    parser.add_argument('--pre_trained_epoch', type=int, default=50,
+    parser.add_argument('--pre_trained_epoch', type=int, default=0,
                         help='path for saved trained models')
     parser.add_argument('--corpus_path', type=str, default='data/corpus.pkl',
                         help='path for vocabulary wrapper')

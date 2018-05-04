@@ -18,7 +18,7 @@ class m_RNN(nn.Module):
         rnn_layers = 1
         self.hidden_dim = 512
         self.vocab_count = 10496
-        self.D = 49
+        self.D = 196
         self.L = 512
         self.use_cuda = use_cuda
 
@@ -115,6 +115,7 @@ class m_RNN(nn.Module):
 
         word = start_word
         sampled_ids = []
+        alphas = [0]
 
         for step in range(17):
             embeddings = self.embeds_1(word)
@@ -125,6 +126,7 @@ class m_RNN(nn.Module):
             attention_layer = self._attention_layer
 
             atten_features, alpha = attention_layer(image_regions, hiddens.view(1, 512))
+            alphas.append(alpha)
 
             mm_features = self.multi_modal(embeddings_2, hiddens.view(1, -1), atten_features, image_features)
             # intermediate_features = self.intermediate(mm_features)
@@ -135,4 +137,4 @@ class m_RNN(nn.Module):
 
             sampled_ids.append(word)
 
-        return torch.stack(sampled_ids, 0)
+        return torch.stack(sampled_ids, 0), alphas
