@@ -55,6 +55,8 @@ def main(args):
         model.load_state_dict(torch.load(f"{args.model_path}model-{args.pre_trained_epoch}.pkl"))
         optimizer.load_state_dict(torch.load(f"{args.model_path}optimizer-{args.pre_trained_epoch}.pkl"))
 
+    epoch_loss = 0
+
     # Train the Models
     total_step = len(dataloader)
     for epoch in range(args.pre_trained_epoch, args.pre_trained_epoch + 1):
@@ -78,8 +80,8 @@ def main(args):
 
                 loss = criterion(output, target)
                 loss.backward()
-
                 optimizer.step()
+                epoch_loss += loss.item()
             # Print log info
             if i % args.log_step == 0:
                 print('Epoch [%d/%d], Step [%d/%d], Loss: %.4f, Perplexity: %5.4f'
@@ -93,6 +95,7 @@ def main(args):
         torch.save(optimizer.state_dict(),
                    os.path.join(args.model_path,
                                 'optimizer-%d.pkl' % (epoch + 1)))
+        print(f'epoch {epoch+1} loss is : {epoch_loss}')
 
 
 if __name__ == '__main__':
