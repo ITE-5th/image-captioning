@@ -10,7 +10,10 @@ class Vgg16Extractor:
     def __init__(self, use_gpu: bool = True, transform: bool = True):
         super().__init__()
 
-        self.cnn = pretrainedmodels.vgg16()
+        self._cnn = pretrainedmodels.vgg16()
+        self.regions = nn.Sequential(*(self.cnn._features[:-2]))
+        self.regions_out = nn.Sequential(*(self.cnn._features[-2:]))
+
         self.tf_image = utils.TransformImage(self.cnn)
         self.transform = transform
         self.use_gpu = use_gpu
@@ -32,12 +35,8 @@ class Vgg16Extractor:
         if self.use_gpu:
             image = image.cuda()
 
-        model = nn.Sequential(*(self.cnn._features[:-2]))
-
-        regions = model(image)
-
-        model = nn.Sequential(*(self.cnn._features[-2:]))
-        feat = model(regions)
+        regions = self.regions(image)
+        feat = self.regions_out(regions)
         x = feat.view(feat.size(0), -1)
         x = self.cnn.linear0(x)
         x = self.cnn.relu0(x)
