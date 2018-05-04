@@ -10,7 +10,7 @@ class Vgg16Extractor:
     def __init__(self, use_gpu: bool = True, transform: bool = True):
         super().__init__()
 
-        self._cnn = pretrainedmodels.vgg16()
+        self.cnn = pretrainedmodels.vgg16()
         self.regions = nn.Sequential(*(self.cnn._features[:-2]))
         self.regions_out = nn.Sequential(*(self.cnn._features[-2:]))
 
