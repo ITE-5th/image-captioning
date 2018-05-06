@@ -51,7 +51,7 @@ class m_RNN(nn.Module):
         # N-L-D
         att_h = self.att_hw(hiddens).unsqueeze(1)
         # N-1-D
-        att_full = nn.ReLU()(att_fea * att_h * self.att_bias.view(1, -1, 1))
+        att_full = nn.ReLU()(att_fea * att_h)
         att_out = self.att_w(att_full).squeeze(2)
         alpha = F.softmax(att_out, dim=1)
         # N-L

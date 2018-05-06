@@ -30,7 +30,6 @@ def main(args):
 
     corpus = Corpus.load(FilePathManager.resolve(args.corpus_path))
     model = m_RNN(use_cuda=use_cuda, image_regions=args.image_regions)
-
     start_word = torch.LongTensor([corpus.word_index('<start>')])
 
     if use_cuda:
@@ -52,7 +51,7 @@ def main(args):
         sentence += corpus.word_from_index(i) + ' '
 
     print(sentence)
-    attention_visualization(args.image, words, alphas.data.cpu(),args.image_regions)
+    attention_visualization(args.image, words, alphas.data.cpu(), args.image_regions)
 
     image = Image.open(args.image)
     plt.imshow(np.asarray(image))
@@ -62,13 +61,13 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--image', type=str, default='misc/images/COCO_val2014_000000016977.jpg',
+    parser.add_argument('--image', type=str, default='misc/images/2.jpg',
                         help='input image for generating caption')
     parser.add_argument('--corpus_path', type=str, default='data/corpus.pkl',
                         help='path for vocabulary wrapper')
-    parser.add_argument('--model_path', type=str, default='models/196/model-9.pkl',
+    parser.add_argument('--model_path', type=str, default='models/49/model-4.pkl',
                         help='path for vocabulary wrapper')
-    parser.add_argument('--image_regions', type=int, default=196,
+    parser.add_argument('--image_regions', type=int, default=49,
                         help='number of image regions to be extracted (49 or 196)')
 
     args = parser.parse_args()
