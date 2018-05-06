@@ -6,7 +6,7 @@ from multi_modal_layer import MultiModalLayer
 
 
 class m_RNN(nn.Module):
-    def __init__(self, use_cuda=True):
+    def __init__(self, use_cuda=True, image_regions=49):
         super().__init__()
         embeds_1_size = 1024
         embeds_2_size = 2048
@@ -18,7 +18,7 @@ class m_RNN(nn.Module):
         rnn_layers = 1
         self.hidden_dim = 512
         self.vocab_count = 10496
-        self.D = 196
+        self.D = image_regions
         self.L = 512
         self.use_cuda = use_cuda
 
@@ -66,13 +66,6 @@ class m_RNN(nn.Module):
             h0 = h0.cuda()
             c0 = c0.cuda()
         return h0, c0
-
-    def get_image_features(self, img):
-        feat_49 = self.vgg16_49(img)
-        out_feat = feat_49.view(feat_49.size(0), -1)
-        feat_4096 = self.vgg16_4096(out_feat)
-        feat_49 = feat_49.view(feat_49.size(0), 49, feat_49.size(1))
-        return feat_49, feat_4096
 
     def forward(self, image_features, image_regions, captions):
 

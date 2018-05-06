@@ -24,12 +24,12 @@ def load_image(image_path, transform=None):
 
 
 def main(args):
-    use_cuda = True
-    extractor = Vgg16Extractor(use_gpu=use_cuda, transform=True)
+    use_cuda = False
+    extractor = Vgg16Extractor(use_gpu=use_cuda, transform=True, regions_count=args.image_regions)
     load_img = utils.LoadImage()
 
     corpus = Corpus.load(FilePathManager.resolve(args.corpus_path))
-    model = m_RNN(use_cuda=use_cuda)
+    model = m_RNN(use_cuda=use_cuda, image_regions=args.image_regions)
 
     start_word = torch.LongTensor([corpus.word_index('<start>')])
 
@@ -51,8 +51,8 @@ def main(args):
         words.append(corpus.word_from_index(i))
         sentence += corpus.word_from_index(i) + ' '
 
-    attention_visualization(args.image, words, alphas.data.cpu())
     print(sentence)
+    attention_visualization(args.image, words, alphas.data.cpu(),args.image_regions)
 
     image = Image.open(args.image)
     plt.imshow(np.asarray(image))
@@ -66,8 +66,10 @@ if __name__ == '__main__':
                         help='input image for generating caption')
     parser.add_argument('--corpus_path', type=str, default='data/corpus.pkl',
                         help='path for vocabulary wrapper')
-    parser.add_argument('--model_path', type=str, default='models/model-10.pkl',
+    parser.add_argument('--model_path', type=str, default='models/196/model-9.pkl',
                         help='path for vocabulary wrapper')
+    parser.add_argument('--image_regions', type=int, default=196,
+                        help='number of image regions to be extracted (49 or 196)')
 
     args = parser.parse_args()
     main(args)

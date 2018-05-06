@@ -27,7 +27,7 @@ def main(args):
         os.makedirs(args.model_path)
 
     # VGG feature extractor
-    extractor = Vgg16Extractor(use_gpu=use_cuda, transform=False)
+    extractor = Vgg16Extractor(use_gpu=use_cuda, transform=False, regions_count=args.image_regions)
 
     # Load vocabulary wrapper.
     corpus = Corpus.load(FilePathManager.resolve(args.corpus_path))
@@ -39,7 +39,7 @@ def main(args):
                             pin_memory=use_cuda)
 
     # Build the models
-    model = m_RNN(use_cuda=use_cuda)
+    model = m_RNN(use_cuda=use_cuda, image_regions=args.image_regions)
 
     if torch.cuda.is_available():
         model.cuda()
@@ -116,6 +116,8 @@ if __name__ == '__main__':
                         help='step size for printing log info')
     parser.add_argument('--save_step', type=int, default=2,
                         help='step size for saving trained models')
+    parser.add_argument('--image_regions', type=int, default=49,
+                        help='number of image regions to be extracted (49 or 196)')
 
     parser.add_argument('--num_epochs', type=int, default=1)
     parser.add_argument('--batch_size', type=int, default=5)
@@ -124,5 +126,3 @@ if __name__ == '__main__':
     parser.add_argument('--w_decay', type=float, default=0)
     args = parser.parse_args()
     main(args)
-
-

@@ -7,17 +7,21 @@ from file_path_manager import FilePathManager
 
 class Vgg16Extractor:
 
-    def __init__(self, use_gpu: bool = True, transform: bool = True):
+    def __init__(self, regions_count=49, use_gpu: bool = True, transform: bool = True):
         super().__init__()
 
         self.cnn = pretrainedmodels.vgg16()
-        self.regions = nn.Sequential(*(self.cnn._features[:-2]))
-        self.regions_out = nn.Sequential(*(self.cnn._features[-2:]))
+        self.regions_count = regions_count
+
+        if regions_count == 49:
+            self.regions = self.cnn._features
+        else:
+            self.regions = nn.Sequential(*(self.cnn._features[:-2]))
+            self.regions_out = nn.Sequential(*(self.cnn._features[-2:]))
 
         self.tf_image = utils.TransformImage(self.cnn)
         self.transform = transform
         self.use_gpu = use_gpu
-
         if self.use_gpu:
             self.cnn = self.cnn.cuda()
         self.cnn.eval()
@@ -36,13 +40,15 @@ class Vgg16Extractor:
             image = image.cuda()
 
         regions = self.regions(image)
-        feat = self.regions_out(regions)
+        feat = regions
+        if self.regions_count == 196:
+            feat = self.regions_out(regions)
         x = feat.view(feat.size(0), -1)
         x = self.cnn.linear0(x)
         x = self.cnn.relu0(x)
         x = self.cnn.dropout0(x)
         features = self.cnn.linear1(x)
-        return features, regions.view(regions.size(0), 196, regions.size(1))
+        return features, regions.view(regions.size(0), self.regions_count, regions.size(1))
 
     def __call__(self, image):
         return self.forward(image)
