@@ -106,7 +106,7 @@ if __name__ == '__main__':
 
     parser.add_argument('--corpus_path', type=str, default='data/corpus.pkl',
                         help='path for vocabulary wrapper')
-    parser.add_argument('--out_path', type=str, default='./models/',
+    parser.add_argument('--out_path', type=str, default='models',
                         help='path for vocabulary wrapper')
     parser.add_argument('--model_path', type=str, default='models/49/model-5.pkl',
                         help='path for vocabulary wrapper')
