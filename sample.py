@@ -1,7 +1,6 @@
 import argparse
+import glob
 
-import matplotlib.pyplot as plt
-import numpy as np
 import torch
 from PIL import Image
 from pretrainedmodels import utils
@@ -24,6 +23,12 @@ def load_image(image_path, transform=None):
 
 
 def main(args):
+    image_list = []
+    for filename in glob.glob(f'{args.images_dir}\\*.jpg'):
+        image_list.append(filename)
+    if len(image_list) == 0:
+        print(f'Sorry No .jpg images found in {args.images_dir}')
+        return
     use_cuda = False
     extractor = Vgg16Extractor(use_gpu=use_cuda, transform=True, regions_count=args.image_regions)
     load_img = utils.LoadImage()
@@ -36,36 +41,39 @@ def main(args):
         model.cuda()
         start_word = start_word.cuda()
 
+    print('loading model')
     state_dict = torch.load(args.model_path)
     model.load_state_dict(state_dict)
+    captions = []
+    for j in range(len(image_list)):
+        image_path = image_list[j]
+        features, regions = extractor.forward(load_img(image_path))
+        # sampled_ids = model.sample(features, regions, start_word.unsqueeze(0))
+        sampled_ids, alphas = model.sample(features, regions, start_word)
 
-    features, regions = extractor.forward(load_img(args.image))
-    # sampled_ids = model.sample(features, regions, start_word.unsqueeze(0))
-    sampled_ids, alphas = model.sample(features, regions, start_word)
-    alphas = torch.cat(alphas[1:], 0)
-    sampled_ids = sampled_ids.cpu().data.numpy()
-    sentence = ''
-    words = []
-    for i in sampled_ids:
-        words.append(corpus.word_from_index(i))
-        sentence += corpus.word_from_index(i) + ' '
+        alphas = torch.cat(alphas[1:], 0)
+        sampled_ids = sampled_ids.cpu().data.numpy()
+        sentence = ''
+        words = []
+        for j in sampled_ids:
+            word = corpus.word_from_index(j)
+            words.append(word)
+            sentence += word + ' '
 
-    print(sentence)
-    attention_visualization(args.image, words, alphas.data.cpu(), args.image_regions)
+        print(f'image {image_path} : {sentence}')
+        captions.append(sentence)
+        attention_visualization(image_path, words, alphas.data.cpu(), args.image_regions)
 
-    image = Image.open(args.image)
-    plt.imshow(np.asarray(image))
-
-    return sentence
+    return captions
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--image', type=str, default='misc/images/2.jpg',
+    parser.add_argument('--images_dir', type=str, default='misc\\images',
                         help='input image for generating caption')
-    parser.add_argument('--corpus_path', type=str, default='data/corpus.pkl',
+    parser.add_argument('--corpus_path', type=str, default='data\\corpus.pkl',
                         help='path for vocabulary wrapper')
-    parser.add_argument('--model_path', type=str, default='models/49/model-4.pkl',
+    parser.add_argument('--model_path', type=str, default='models\\49\\model-14.pkl',
                         help='path for vocabulary wrapper')
     parser.add_argument('--image_regions', type=int, default=49,
                         help='number of image regions to be extracted (49 or 196)')

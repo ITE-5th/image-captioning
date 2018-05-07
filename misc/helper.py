@@ -25,5 +25,5 @@ def attention_visualization(image_name, caption, alphas, regions=49):
         alp_img = skimage.transform.pyramid_expand(alp_curr.numpy(), upscale=upscale, sigma=20)
         plt.imshow(alp_img, alpha=0.7)
         plt.axis('off')
-    plt.savefig('sample.png')
+    plt.savefig(f'{image_name.replace(".jpg", "")}-attention.png')
     plt.show()
