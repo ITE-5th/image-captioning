@@ -60,7 +60,7 @@ def main(args):
             words.append(word)
             sentence += word + ' '
 
-        print(f'image {image_path} : {sentence}')
+        print(f'image {image_path.replace(args.images_dir,"")} : {sentence}')
         captions.append(sentence)
         attention_visualization(image_path, words, alphas.data.cpu(), args.image_regions)
 
