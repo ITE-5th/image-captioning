@@ -8,6 +8,7 @@ from pycocotools.coco import COCO
 from torch.utils.data import DataLoader
 
 from file_path_manager import FilePathManager
+from inceptionv3_extractor import InceptionV3Extractor
 from misc.coco_dataset import CocoDataset
 from misc.corpus import Corpus
 from model import m_RNN
@@ -23,8 +24,13 @@ def handle(x, cuda):
 
 def main(args):
     use_cuda = True
-    # VGG feature extractor
-    extractor = Vgg16Extractor(use_gpu=use_cuda, transform=False, regions_count=args.image_regions)
+
+    if args.image_regions == 64:
+        # Inception V3 feature extractor
+        extractor = InceptionV3Extractor(use_gpu=use_cuda, transform=False)
+    else:
+        # VGG feature extractor
+        extractor = Vgg16Extractor(use_gpu=use_cuda, transform=False, regions_count=args.image_regions)
 
     # Load vocabulary wrapper.
     corpus = Corpus.load(FilePathManager.resolve(args.corpus_path))
@@ -36,7 +42,11 @@ def main(args):
     dataloader = DataLoader(dataset, shuffle=True, pin_memory=use_cuda)
 
     # Build the models
-    model = m_RNN(use_cuda=use_cuda, image_regions=args.image_regions)
+    # Build the models
+    model = m_RNN(use_cuda=use_cuda,
+                  image_regions=extractor.regions_count,
+                  regions_features=extractor.regions_features_size,
+                  features_size=extractor.features_size)
 
     if torch.cuda.is_available():
         model.cuda()
@@ -108,7 +118,7 @@ if __name__ == '__main__':
                         help='path for vocabulary wrapper')
     parser.add_argument('--out_path', type=str, default='models',
                         help='path for vocabulary wrapper')
-    parser.add_argument('--model_path', type=str, default='models/49/model-5.pkl',
+    parser.add_argument('--model_path', type=str, default='models/49/model-17.pkl',
                         help='path for vocabulary wrapper')
     parser.add_argument('--test_path', type=str,
                         default='D:/Datasets/mscoco/test/captions_train2017.json',
@@ -116,6 +126,6 @@ if __name__ == '__main__':
     parser.add_argument('--image_dir', type=str, default='D:/Datasets/mscoco/test/images',
                         help='directory for resized images')
     parser.add_argument('--image_regions', type=int, default=49,
-                        help='number of image regions to be extracted (49 or 196)')
+                        help='number of image regions to be extracted (49 or 196) 64 for inception_v3')
     args = parser.parse_args()
     main(args)

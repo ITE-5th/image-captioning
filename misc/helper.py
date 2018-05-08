@@ -13,7 +13,7 @@ def attention_visualization(image_name, caption, alphas, regions=49):
     plt.axis('off')
     words = caption
     regions = int(math.sqrt(regions))
-    upscale = 32 if regions == 7 else 16
+    upscale = 224 / regions
     for t in range(len(words)):
         if t > 18:
             break

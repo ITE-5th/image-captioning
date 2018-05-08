@@ -6,6 +6,7 @@ from PIL import Image
 from pretrainedmodels import utils
 
 from file_path_manager import FilePathManager
+from inceptionv3_extractor import InceptionV3Extractor
 from misc.corpus import Corpus
 from misc.helper import attention_visualization
 from model import m_RNN
@@ -30,11 +31,24 @@ def main(args):
         print(f'Sorry No .jpg images found in {args.images_dir}')
         return
     use_cuda = False
-    extractor = Vgg16Extractor(use_gpu=use_cuda, transform=True, regions_count=args.image_regions)
+
+    if args.image_regions == 64:
+        # Inception V3 feature extractor
+        extractor = InceptionV3Extractor(use_gpu=use_cuda)
+    else:
+        # VGG feature extractor
+        extractor = Vgg16Extractor(use_gpu=use_cuda, regions_count=args.image_regions)
+
     load_img = utils.LoadImage()
 
     corpus = Corpus.load(FilePathManager.resolve(args.corpus_path))
-    model = m_RNN(use_cuda=use_cuda, image_regions=args.image_regions)
+
+    # Build the models
+    model = m_RNN(use_cuda=use_cuda,
+                  image_regions=extractor.regions_count,
+                  regions_features=extractor.regions_features_size,
+                  features_size=extractor.features_size)
+
     start_word = torch.LongTensor([corpus.word_index('<start>')])
 
     if use_cuda:
@@ -60,7 +74,7 @@ def main(args):
             words.append(word)
             sentence += word + ' '
 
-        print(f'image {image_path.replace(args.images_dir,"")} : {sentence}')
+        print(f'image {image_path.replace(args.images_dir,"")} : {sentence.split("<end>")[0]}')
         captions.append(sentence)
         attention_visualization(image_path, words, alphas.data.cpu(), args.image_regions)
 
@@ -73,10 +87,10 @@ if __name__ == '__main__':
                         help='input image for generating caption')
     parser.add_argument('--corpus_path', type=str, default='data\\corpus.pkl',
                         help='path for vocabulary wrapper')
-    parser.add_argument('--model_path', type=str, default='models\\49\\model-14.pkl',
+    parser.add_argument('--model_path', type=str, default='models\\model-10.pkl',
                         help='path for vocabulary wrapper')
-    parser.add_argument('--image_regions', type=int, default=49,
-                        help='number of image regions to be extracted (49 or 196)')
+    parser.add_argument('--image_regions', type=int, default=64,
+                        help='number of image regions to be extracted (49 or 196) 64 for inception_v3')
 
     args = parser.parse_args()
     main(args)

@@ -6,20 +6,19 @@ from multi_modal_layer import MultiModalLayer
 
 
 class m_RNN(nn.Module):
-    def __init__(self, use_cuda=True, image_regions=49):
+    def __init__(self, use_cuda=True, image_regions=49, regions_features=512, features_size=4096):
         super().__init__()
+
         embeds_1_size = 1024
         embeds_2_size = 2048
         rnn_size = 512
-        attention_size = 512
-        cnn_features_size = 4096
-        multimodal_in_size = 512
+        cnn_features_size = features_size
         multimodal_out_size = 1024
         rnn_layers = 1
         self.hidden_dim = 512
         self.vocab_count = 10496
         self.D = image_regions
-        self.L = 512
+        self.L = regions_features
         self.use_cuda = use_cuda
 
         # attention
@@ -28,8 +27,6 @@ class m_RNN(nn.Module):
         self.att_bias = nn.Parameter(torch.ones(self.D))
         self.att_w = nn.Linear(self.L, 1, bias=False)
 
-        # TODO embedding change first linear to embedding and modify data loader
-        # self.embeds_1 = nn.Linear(self.vocab_count, embeds_1_size)
         self.embeds_1 = nn.Embedding(self.vocab_count, embeds_1_size)
 
         self.embeds_2 = nn.Linear(embeds_1_size, embeds_2_size)
@@ -37,13 +34,11 @@ class m_RNN(nn.Module):
         self.rnn_cell = nn.LSTM(embeds_2_size, rnn_size, rnn_layers)
 
         self.multi_modal = MultiModalLayer(embeds_2_size, rnn_size, cnn_features_size,
-                                           multimodal_in_size, multimodal_out_size)
-        # self.intermediate = nn.Linear(multimodal_out_size, self.vocab_count)
-        # self.intermediate.weight.data = self.embeds_1.weight.data
+                                           self.L, multimodal_out_size)
 
     def _attention_layer(self, features, hiddens):
         """
-        :param features:  batch_size  * 49 * 512
+        :param features:  batch_size  * D * L
         :param hiddens:  batch_size * hidden_dim
         :return:
         """

@@ -8,6 +8,7 @@ from torch.nn.utils.rnn import pack_padded_sequence
 from torch.utils.data import DataLoader
 
 from file_path_manager import FilePathManager
+from inceptionv3_extractor import InceptionV3Extractor
 from misc.coco_dataset import CocoDataset
 from misc.corpus import Corpus
 from model import m_RNN
@@ -26,8 +27,12 @@ def main(args):
     if not os.path.exists(args.model_path):
         os.makedirs(args.model_path)
 
-    # VGG feature extractor
-    extractor = Vgg16Extractor(use_gpu=use_cuda, transform=False, regions_count=args.image_regions)
+    if args.image_regions == 64:
+        # Inception V3 feature extractor
+        extractor = InceptionV3Extractor(use_gpu=use_cuda, transform=False)
+    else:
+        # VGG feature extractor
+        extractor = Vgg16Extractor(use_gpu=use_cuda, transform=False, regions_count=args.image_regions)
 
     # Load vocabulary wrapper.
     corpus = Corpus.load(FilePathManager.resolve(args.corpus_path))
@@ -39,7 +44,10 @@ def main(args):
                             pin_memory=use_cuda)
 
     # Build the models
-    model = m_RNN(use_cuda=use_cuda, image_regions=args.image_regions)
+    model = m_RNN(use_cuda=use_cuda,
+                  image_regions=extractor.regions_count,
+                  regions_features=extractor.regions_features_size,
+                  features_size=extractor.features_size)
 
     if torch.cuda.is_available():
         model.cuda()
@@ -59,7 +67,7 @@ def main(args):
 
     # Train the Models
     total_step = len(dataloader)
-    for epoch in range(args.pre_trained_epoch, args.pre_trained_epoch + 1):
+    for epoch in range(args.pre_trained_epoch, args.pre_trained_epoch + 10):
         for i, (images, inputs, targets, _) in enumerate(dataloader):
             images = images.cuda()
             images_features, images_regions = extractor.forward(images)
@@ -116,8 +124,8 @@ if __name__ == '__main__':
                         help='step size for printing log info')
     parser.add_argument('--save_step', type=int, default=2,
                         help='step size for saving trained models')
-    parser.add_argument('--image_regions', type=int, default=49,
-                        help='number of image regions to be extracted (49 or 196)')
+    parser.add_argument('--image_regions', type=int, default=64,
+                        help='number of image regions to be extracted (49 or 196) 64 for inception_v3')
 
     parser.add_argument('--num_epochs', type=int, default=1)
     parser.add_argument('--batch_size', type=int, default=5)
