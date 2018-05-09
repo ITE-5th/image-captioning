@@ -65,6 +65,7 @@ def main(args):
 
     epoch_loss = 0
     log = ''
+    print('enable Logging')
     # Train the Models
     total_step = len(dataloader)
     for epoch in range(args.pre_trained_epoch, args.pre_trained_epoch + 1):
