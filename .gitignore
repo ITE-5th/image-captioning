@@ -108,3 +108,35 @@ data/instances_val2014.json
 data/person_keypoints_train2014.json
 data/person_keypoints_val2014.json
 !/data/corpus.pkl
+/models/
+misc/images/FootBall Palyers-attention.png
+misc/images/FootBall Palyers.jpg
+misc/images/Kaaba-attention.png
+misc/images/Kaaba.jpg
+misc/images/Parrots-attention.png
+misc/images/Parrots.jpg
+misc/images/airplane-attention.png
+misc/images/airplane.jpg
+misc/images/bath room-attention.png
+misc/images/bath room.jpg
+misc/images/giraffes-attention.png
+misc/images/giraffes.jpg
+misc/images/girl in field-attention.png
+misc/images/girl in field.jpg
+misc/images/graduation heros-attention.png
+misc/images/graduation heros.jpg
+misc/images/horses-attention.png
+misc/images/horses.jpg
+misc/images/interview-attention.png
+misc/images/interview.jpg
+misc/images/motor in field-attention.png
+misc/images/motor in field.jpg
+misc/images/old photo-attention.png
+misc/images/old photo.jpg
+misc/images/parrot-attention.png
+misc/images/parrot.jpg
+misc/images/two cars parked-attention.png
+misc/images/two cars parked.jpg
+result_test.json
+sample.png
+!/models/readme.md

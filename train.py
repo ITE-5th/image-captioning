@@ -64,7 +64,7 @@ def main(args):
         optimizer.load_state_dict(torch.load(f"{args.model_path}optimizer-{args.pre_trained_epoch}.pkl"))
 
     epoch_loss = 0
-
+    log = ''
     # Train the Models
     total_step = len(dataloader)
     for epoch in range(args.pre_trained_epoch, args.pre_trained_epoch + 1):
@@ -92,45 +92,51 @@ def main(args):
                 epoch_loss += loss.item()
             # Print log info
             if i % args.log_step == 0:
+                log += 'Epoch [%d/%d], Step [%d/%d], Loss: %.4f, Perplexity: %5.4f \n' % (
+                    epoch, args.pre_trained_epoch + 1, i, total_step, loss.item(), np.exp(loss.item()))
+
                 print('Epoch [%d/%d], Step [%d/%d], Loss: %.4f, Perplexity: %5.4f'
                       % (epoch, args.pre_trained_epoch + 1, i, total_step,
                          loss.item(), np.exp(loss.item())))
 
-        # Save the models
-        torch.save(model.state_dict(),
-                   os.path.join(args.model_path,
-                                'model-%d.pkl' % (epoch + 1)))
-        torch.save(optimizer.state_dict(),
-                   os.path.join(args.model_path,
-                                'optimizer-%d.pkl' % (epoch + 1)))
-        print(f'epoch {epoch+1} loss is : {epoch_loss}')
+                # Save the models
+                torch.save(model.state_dict(),
+                           os.path.join(args.model_path,
+                                        'model-%d.pkl' % (epoch + 1)))
+            torch.save(optimizer.state_dict(),
+                       os.path.join(args.model_path,
+                                    'optimizer-%d.pkl' % (epoch + 1)))
+            print(f'epoch {epoch+1} loss is : {epoch_loss}')
+            log += f'epoch {epoch+1} loss is : {epoch_loss}\n'
 
+            with open(os.path.join(args.model_path, 'log-%d.txt' % (epoch + 1)), "w") as text_file:
+                text_file.write(log)
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
+            if __name__ == '__main__':
+                parser = argparse.ArgumentParser()
 
-    parser.add_argument('--model_path', type=str, default='./models/',
-                        help='path for saving trained models')
-    parser.add_argument('--pre_trained_epoch', type=int, default=0,
-                        help='path for saved trained models')
-    parser.add_argument('--corpus_path', type=str, default='data/corpus.pkl',
-                        help='path for vocabulary wrapper')
-    parser.add_argument('--caption_path', type=str,
-                        default='D:/Datasets/mscoco/test/captions_train2017.json',
-                        help='path for train annotation json file')
-    parser.add_argument('--image_dir', type=str, default='D:/Datasets/mscoco/test/images',
-                        help='directory for resized images')
-    parser.add_argument('--log_step', type=int, default=1,
-                        help='step size for printing log info')
-    parser.add_argument('--save_step', type=int, default=2,
-                        help='step size for saving trained models')
-    parser.add_argument('--image_regions', type=int, default=64,
-                        help='number of image regions to be extracted (49 or 196) 64 for inception_v3')
+            parser.add_argument('--model_path', type=str, default='./models/',
+                                help='path for saving trained models')
+            parser.add_argument('--pre_trained_epoch', type=int, default=0,
+                                help='path for saved trained models')
+            parser.add_argument('--corpus_path', type=str, default='data/corpus.pkl',
+                                help='path for vocabulary wrapper')
+            parser.add_argument('--caption_path', type=str,
+                                default='D:/Datasets/mscoco/test/captions_train2017.json',
+                                help='path for train annotation json file')
+            parser.add_argument('--image_dir', type=str, default='D:/Datasets/mscoco/test/images',
+                                help='directory for resized images')
+            parser.add_argument('--log_step', type=int, default=1,
+                                help='step size for printing log info')
+            parser.add_argument('--save_step', type=int, default=2,
+                                help='step size for saving trained models')
+            parser.add_argument('--image_regions', type=int, default=64,
+                                help='number of image regions to be extracted (49 or 196) 64 for inception_v3')
 
-    parser.add_argument('--num_epochs', type=int, default=1)
-    parser.add_argument('--batch_size', type=int, default=5)
-    parser.add_argument('--num_workers', type=int, default=0)
-    parser.add_argument('--lr', type=float, default=0.0001)
-    parser.add_argument('--w_decay', type=float, default=0)
-    args = parser.parse_args()
-    main(args)
+            parser.add_argument('--num_epochs', type=int, default=1)
+            parser.add_argument('--batch_size', type=int, default=5)
+            parser.add_argument('--num_workers', type=int, default=0)
+            parser.add_argument('--lr', type=float, default=0.0001)
+            parser.add_argument('--w_decay', type=float, default=0)
+            args = parser.parse_args()
+            main(args)
