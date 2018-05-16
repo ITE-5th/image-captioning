@@ -65,7 +65,7 @@ def main(args):
 
         sampled_ids, _ = model.sample(image_features, image_regions, start_word, args.beam_size)
         sampled_ids = sampled_ids.cpu().data.numpy().T
-
+        print('fin')
         for j in range(batch_size):
             sentence = ''
             words = []
