@@ -109,7 +109,7 @@ def language_eval(input_data, savedir, split, ann_file):
     cocoRes = coco.loadRes(resFile)
     cocoEval = COCOEvalCap(coco, cocoRes)
     cocoEval.params['image_id'] = cocoRes.getImgIds()
-    # cocoEval.evaluate()
+    cocoEval.evaluate()
 
     # Create output dictionary.
     out = []
