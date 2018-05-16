@@ -99,38 +99,58 @@ class m_RNN(nn.Module):
         return intermediate_features
 
     def sample(self, image_features, image_regions, start_word, beam_size=5):
+        images_count = image_features.shape[0]
+        sentence_length = 17
+        batch_size = images_count * beam_size
+        h0, c0 = self.get_start_states(batch_size)
+        # image_regions = image_regions.repeat(beam_size, 1, 1)
+        # image_features = image_features.repeat(beam_size, 1)
+        image_features = torch.stack([image_features] * beam_size) \
+            .permute(1, 0, 2) \
+            .contiguous() \
+            .view(-1, image_features.shape[-1])
 
-        h0, c0 = self.get_start_states(beam_size)
-        image_regions = image_regions.repeat(beam_size, 1, 1)
-        image_features = image_features.repeat(beam_size, 1)
+        image_regions = torch.stack([image_regions.view(images_count, -1)] * beam_size) \
+            .permute(1, 0, 2) \
+            .contiguous() \
+            .view(-1, image_regions.shape[1], image_regions.shape[2])
 
-        word = start_word.repeat(beam_size)
+        word = start_word.repeat(batch_size)
         alphas = []
         all_words_indices = []
-        beam_searcher = BeamSearch(beam_size, 1, 17)
+        beam_searcher = BeamSearch(beam_size, images_count, sentence_length)
         for step in range(17):
             if self.use_cuda:
                 word = word.cuda()
             embeddings = self.embeds_1(word)
             embeddings_2 = self.embeds_2(embeddings)
 
-            hiddens, (h0, c0) = self.rnn_cell(embeddings_2.view(1, beam_size, 2048),
+            hiddens, (h0, c0) = self.rnn_cell(embeddings_2.view(1, batch_size, 2048),
                                               (h0, c0))
             attention_layer = self._attention_layer
 
-            atten_features, alpha = attention_layer(image_regions, hiddens.view(beam_size, 512))
-            alphas.append(alpha)
+            atten_features, alpha = attention_layer(image_regions, hiddens.view(batch_size, 512))
+            # images count * beam size * regions
+            alphas.append(alpha.reshape(images_count, beam_size, -1))
 
-            mm_features = self.multi_modal(embeddings_2, hiddens.view(beam_size, -1), atten_features, image_features)
+            mm_features = self.multi_modal(embeddings_2, hiddens.view(batch_size, -1), atten_features, image_features)
             # intermediate_features = self.intermediate(mm_features)
             intermediate_features = F.linear(mm_features, weight=self.embeds_1.weight)
             beam_indices, words_indices = beam_searcher.expand_beam(outputs=intermediate_features)
-            all_words_indices.append(words_indices)
-            word = torch.tensor(words_indices)
+            words_indices = torch.tensor(words_indices)
+            # images count * beam size * word index
+            all_words_indices.append(words_indices.reshape(images_count, beam_size))
+            word = words_indices
 
-        results = beam_searcher.get_results()[:, 0]
-        for i in range(len(results)):
-            alphas[i] = alphas[i][all_words_indices[i].index(results[i])]
+        results = beam_searcher.get_results()
+        if images_count == 1:
+            for j in range(images_count):
+                for i in range(len(results)):
+                    nonzero = (all_words_indices[i][j] == results[i][j]).nonzero()[0]
+                    alphas[i] = alphas[i][j][nonzero].squeeze()
+        else:
+            alphas = []
+
         return results, alphas
 
 

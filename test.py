@@ -39,7 +39,8 @@ def main(args):
     dataset = CocoDataset(corpus, root=args.image_dir, annFile=args.test_path, transform=extractor.tf_image)
 
     # Build data loader
-    dataloader = DataLoader(dataset, shuffle=True, pin_memory=use_cuda)
+    batch_size = args.batch_size
+    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, pin_memory=use_cuda)
 
     # Build the models
     # Build the models
@@ -60,26 +61,29 @@ def main(args):
     for i, (image, _, _, img_id) in enumerate(dataloader):
         image = image.cuda()
         image_features, image_regions = extractor.forward(image)
-        # Set mini-batch dataset
+        batch_size = image_features.shape[0]
+
         sampled_ids, _ = model.sample(image_features, image_regions, start_word, args.beam_size)
-        sampled_ids = sampled_ids.cpu().data.numpy()
-        sentence = ''
-        words = []
-        for j in sampled_ids:
-            word = corpus.word_from_index(j)
+        sampled_ids = sampled_ids.cpu().data.numpy().T
 
-            if word == '<end>':
-                break
+        for j in range(batch_size):
+            sentence = ''
+            words = []
+            for k in sampled_ids[j]:
+                word = corpus.word_from_index(k)
 
-            if len(word) == 0:
-                continue
-            words.append(word)
+                if word == '<end>':
+                    break
 
-        for k in range(len(words)):
-            sentence += (' ' if k != 0 and words[k] != ',' else '') + words[k]
+                if len(word) == 0:
+                    continue
+                words.append(word)
 
-        print(sentence)
-        pred_captions.append({'image_id': int(img_id), 'caption': sentence})
+            for k in range(len(words)):
+                sentence += (' ' if k != 0 and words[k] != ',' else '') + words[k]
+
+            print(sentence)
+            pred_captions.append({'image_id': int(img_id[j]), 'caption': sentence})
     language_eval(pred_captions, args.out_path, 'test', args.test_path)
 
 
@@ -105,7 +109,7 @@ def language_eval(input_data, savedir, split, ann_file):
     cocoRes = coco.loadRes(resFile)
     cocoEval = COCOEvalCap(coco, cocoRes)
     cocoEval.params['image_id'] = cocoRes.getImgIds()
-    cocoEval.evaluate()
+    # cocoEval.evaluate()
 
     # Create output dictionary.
     out = []
@@ -135,7 +139,8 @@ if __name__ == '__main__':
                         help='directory for resized images')
     parser.add_argument('--image_regions', type=int, default=49,
                         help='number of image regions to be extracted (49 or 196) 64 for inception_v3')
-    parser.add_argument('--beam_size', type=int, default=5)
+    parser.add_argument('--beam_size', type=int, default=15)
+    parser.add_argument('--batch_size', type=int, default=5)
 
     args = parser.parse_args()
     main(args)

@@ -60,16 +60,16 @@ def main(args):
     state_dict = torch.load(args.model_path, map_location=None if use_cuda else 'cpu')
     model.load_state_dict(state_dict)
     captions = []
-    for j in range(len(image_list)):
-        image_path = image_list[j]
+    for i in range(len(image_list)):
+        image_path = image_list[i]
         features, regions = extractor.forward(load_img(image_path))
         # sampled_ids = model.sample(features, regions, start_word.unsqueeze(0))
         sampled_ids, alphas = model.sample(features, regions, start_word, args.beam_size)
 
-        sampled_ids = sampled_ids.cpu().data.numpy()
+        sampled_ids = sampled_ids.cpu().data.numpy().T
         sentence = ''
         words = []
-        for j in sampled_ids:
+        for j in sampled_ids[0]:
             word = corpus.word_from_index(j)
 
             if len(word) == 0:
@@ -92,7 +92,7 @@ if __name__ == '__main__':
                         help='input image for generating caption')
     parser.add_argument('--corpus_path', type=str, default='data\\corpus.pkl',
                         help='path for vocabulary wrapper')
-    parser.add_argument('--model_path', type=str, default='models\\49\\model-35.pkl',
+    parser.add_argument('--model_path', type=str, default='models\\49\\model-39.pkl',
                         help='path for vocabulary wrapper')
     parser.add_argument('--image_regions', type=int, default=49,
                         help='number of image regions to be extracted (49 or 196) 64 for inception_v3')
