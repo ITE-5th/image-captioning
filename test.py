@@ -61,7 +61,7 @@ def main(args):
         image = image.cuda()
         image_features, image_regions = extractor.forward(image)
         # Set mini-batch dataset
-        sampled_ids, _ = model.sample(image_features, image_regions, start_word, beam_size)
+        sampled_ids, _ = model.sample(image_features, image_regions, start_word, args.beam_size)
         sampled_ids = sampled_ids.cpu().data.numpy()
         sentence = ''
         for j in sampled_ids:
