@@ -66,7 +66,6 @@ def main(args):
         # sampled_ids = model.sample(features, regions, start_word.unsqueeze(0))
         sampled_ids, alphas = model.sample(features, regions, start_word, args.beam_size)
 
-        alphas = torch.cat(alphas[1:], 0)
         sampled_ids = sampled_ids.cpu().data.numpy()
         sentence = ''
         words = []
@@ -82,7 +81,7 @@ def main(args):
         sentence = sentence.split("<end>")[0]
         print(f'image {image_path.replace(args.images_dir,"")} : {sentence}')
         captions.append(sentence)
-        attention_visualization(image_path, words, alphas.data.cpu(), args.image_regions)
+        attention_visualization(image_path, words, alphas, args.image_regions)
 
     return captions
 

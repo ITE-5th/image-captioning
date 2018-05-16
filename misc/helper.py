@@ -21,8 +21,8 @@ def attention_visualization(image_name, caption, alphas, regions=49):
         plt.text(0, 1, '%s' % (words[t]), color='black', backgroundcolor='white', fontsize=8)
         plt.imshow(image)
         # print alphas
-        alp_curr = alphas[t, :].view(regions, regions)
-        alp_img = skimage.transform.pyramid_expand(alp_curr.numpy(), upscale=upscale, sigma=20)
+        alp_curr = alphas[t].view(regions, regions)
+        alp_img = skimage.transform.pyramid_expand(alp_curr.detach().numpy(), upscale=upscale, sigma=20)
         plt.imshow(alp_img, alpha=0.7)
         plt.axis('off')
     plt.savefig(f'{image_name.replace(".jpg", "")}-attention.png')
