@@ -48,7 +48,7 @@ def main(args):
                   regions_features=extractor.regions_features_size,
                   features_size=extractor.features_size)
 
-    if torch.cuda.is_available():
+    if torch.cuda.is_available() and use_cuda:
         model.cuda()
     # Load State Dictionary
     state_dict = torch.load(args.model_path)
@@ -64,6 +64,7 @@ def main(args):
         sampled_ids, _ = model.sample(image_features, image_regions, start_word, args.beam_size)
         sampled_ids = sampled_ids.cpu().data.numpy()
         sentence = ''
+        words = []
         for j in sampled_ids:
             word = corpus.word_from_index(j)
 

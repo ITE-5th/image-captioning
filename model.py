@@ -109,6 +109,8 @@ class m_RNN(nn.Module):
         all_words_indices = []
         beam_searcher = BeamSearch(beam_size, 1, 17)
         for step in range(17):
+            if self.use_cuda:
+                word = word.cuda()
             embeddings = self.embeds_1(word)
             embeddings_2 = self.embeds_2(embeddings)
 
@@ -117,7 +119,6 @@ class m_RNN(nn.Module):
             attention_layer = self._attention_layer
 
             atten_features, alpha = attention_layer(image_regions, hiddens.view(beam_size, 512))
-            # TODO Determine Alpha
             alphas.append(alpha)
 
             mm_features = self.multi_modal(embeddings_2, hiddens.view(beam_size, -1), atten_features, image_features)
