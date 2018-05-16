@@ -30,6 +30,7 @@ def main(args):
     if len(image_list) == 0:
         print(f'Sorry No .jpg images found in {args.images_dir}')
         return
+
     use_cuda = False
 
     if args.image_regions == 64:
@@ -56,14 +57,14 @@ def main(args):
         start_word = start_word.cuda()
 
     print('loading model')
-    state_dict = torch.load(args.model_path)
+    state_dict = torch.load(args.model_path, map_location=None if use_cuda else 'cpu')
     model.load_state_dict(state_dict)
     captions = []
     for j in range(len(image_list)):
         image_path = image_list[j]
         features, regions = extractor.forward(load_img(image_path))
         # sampled_ids = model.sample(features, regions, start_word.unsqueeze(0))
-        sampled_ids, alphas = model.sample(features, regions, start_word)
+        sampled_ids, alphas = model.sample(features, regions, start_word, args.beam_size)
 
         alphas = torch.cat(alphas[1:], 0)
         sampled_ids = sampled_ids.cpu().data.numpy()
@@ -71,10 +72,15 @@ def main(args):
         words = []
         for j in sampled_ids:
             word = corpus.word_from_index(j)
-            words.append(word)
-            sentence += word + ' '
 
-        print(f'image {image_path.replace(args.images_dir,"")} : {sentence.split("<end>")[0]}')
+            if len(word) == 0:
+                continue
+            words.append(word)
+
+        for k in range(len(words)):
+            sentence += (' ' if k != 0 and words[k] != ',' else '') + words[k]
+        sentence = sentence.split("<end>")[0]
+        print(f'image {image_path.replace(args.images_dir,"")} : {sentence}')
         captions.append(sentence)
         attention_visualization(image_path, words, alphas.data.cpu(), args.image_regions)
 
@@ -87,10 +93,11 @@ if __name__ == '__main__':
                         help='input image for generating caption')
     parser.add_argument('--corpus_path', type=str, default='data\\corpus.pkl',
                         help='path for vocabulary wrapper')
-    parser.add_argument('--model_path', type=str, default='models\\49\\model-26.pkl',
+    parser.add_argument('--model_path', type=str, default='models\\49\\model-35.pkl',
                         help='path for vocabulary wrapper')
     parser.add_argument('--image_regions', type=int, default=49,
                         help='number of image regions to be extracted (49 or 196) 64 for inception_v3')
+    parser.add_argument('--beam_size', type=int, default=5)
 
     args = parser.parse_args()
     main(args)

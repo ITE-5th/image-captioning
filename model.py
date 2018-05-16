@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from beam_search import BeamSearch
 from multi_modal_layer import MultiModalLayer
 
 
@@ -97,7 +98,38 @@ class m_RNN(nn.Module):
         # return nn.Softmax()(intermediate_features)
         return intermediate_features
 
-    def sample(self, image_features, image_regions, start_word):
+    def sample(self, image_features, image_regions, start_word, beam_size=10):
+
+        h0, c0 = self.get_start_states(beam_size)
+        image_regions = image_regions.repeat(beam_size, 1, 1)
+        image_features = image_features.repeat(beam_size, 1)
+
+        word = start_word.repeat(beam_size)
+        sampled_ids = []
+        alphas = [0]
+        beam_searcher = BeamSearch(beam_size, 1, 17)
+        generated_caption = []
+        for step in range(17):
+            embeddings = self.embeds_1(word)
+            embeddings_2 = self.embeds_2(embeddings)
+
+            hiddens, (h0, c0) = self.rnn_cell(embeddings_2.view(1, beam_size, 2048),
+                                              (h0, c0))
+            attention_layer = self._attention_layer
+
+            atten_features, alpha = attention_layer(image_regions, hiddens.view(beam_size, 512))
+            # TODO Determine Alpha
+            alphas.append(alpha)
+
+            mm_features = self.multi_modal(embeddings_2, hiddens.view(beam_size, -1), atten_features, image_features)
+            # intermediate_features = self.intermediate(mm_features)
+            intermediate_features = F.linear(mm_features, weight=self.embeds_1.weight)
+            # word = nn.Softmax()(intermediate_features)
+            beam_indices, words_indices = beam_searcher.expand_beam(outputs=intermediate_features)
+            word = torch.tensor(words_indices)
+        return beam_searcher.get_results()[:, 0], alphas
+
+    def sample_2(self, image_features, image_regions, start_word):
 
         h0, c0 = self.get_start_states(1)
 
