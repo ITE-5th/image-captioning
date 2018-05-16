@@ -132,6 +132,7 @@ class m_RNN(nn.Module):
             alphas[i] = alphas[i][all_words_indices[i].index(results[i])]
         return results, alphas
 
+
 if __name__ == '__main__':
     model = m_RNN()
 

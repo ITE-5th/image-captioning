@@ -61,15 +61,22 @@ def main(args):
         image = image.cuda()
         image_features, image_regions = extractor.forward(image)
         # Set mini-batch dataset
-        sampled_ids, _ = model.sample(image_features, image_regions, start_word)
+        sampled_ids, _ = model.sample(image_features, image_regions, start_word, beam_size)
         sampled_ids = sampled_ids.cpu().data.numpy()
         sentence = ''
-        for i in sampled_ids:
+        for j in sampled_ids:
+            word = corpus.word_from_index(j)
 
-            word = corpus.word_from_index(i)
             if word == '<end>':
                 break
-            sentence += word + ' '
+
+            if len(word) == 0:
+                continue
+            words.append(word)
+
+        for k in range(len(words)):
+            sentence += (' ' if k != 0 and words[k] != ',' else '') + words[k]
+
         print(sentence)
         pred_captions.append({'image_id': int(img_id), 'caption': sentence})
     language_eval(pred_captions, args.out_path, 'test', args.test_path)
@@ -118,7 +125,7 @@ if __name__ == '__main__':
                         help='path for vocabulary wrapper')
     parser.add_argument('--out_path', type=str, default='models',
                         help='path for vocabulary wrapper')
-    parser.add_argument('--model_path', type=str, default='models/49/model-17.pkl',
+    parser.add_argument('--model_path', type=str, default='models/49/model-18.pkl',
                         help='path for vocabulary wrapper')
     parser.add_argument('--test_path', type=str,
                         default='D:/Datasets/mscoco/test/captions_train2017.json',
@@ -127,5 +134,7 @@ if __name__ == '__main__':
                         help='directory for resized images')
     parser.add_argument('--image_regions', type=int, default=49,
                         help='number of image regions to be extracted (49 or 196) 64 for inception_v3')
+    parser.add_argument('--beam_size', type=int, default=5)
+
     args = parser.parse_args()
     main(args)
